@@ -67,7 +67,7 @@ export default function CreateGame() {
       setIsSubmitting(true);
 
       try {
-        const gameId = generateGameId();
+        const gameId = generateGameId().toLowerCase();
         const locationState: CreateGameLocationState = {
           playerName: formData.playerName.trim(),
           isAdmin: true,

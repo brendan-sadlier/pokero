@@ -26,9 +26,17 @@ import { AlertCircle, RefreshCw } from 'lucide-react';
 type LocationState = CreateGameLocationState | JoinGameLocationState;
 
 export default function Game() {
-  const { gameId } = useParams<{ gameId: string }>();
+  const { gameId: rawGameId } = useParams<{ gameId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const gameId = useMemo(() => rawGameId?.toLowerCase() || null, [rawGameId]);
+
+  useEffect(() => {
+    if (rawGameId && rawGameId !== gameId) {
+      window.history.replaceState(null, '', `/game/${gameId}`);
+    }
+  }, [rawGameId, gameId]);
 
   const existingSession = useMemo(() => (gameId ? getPlayerSession(gameId) : null), [gameId]);
 

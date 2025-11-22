@@ -17,13 +17,14 @@ export default function JoinGame() {
 
   const [formData, setFormData] = useState<JoinGameFormData>({
     playerName: '',
-    gameId: searchParams.get('gameId') || '',
+    gameId: searchParams.get('gameId')?.toLowerCase() || '',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleInputChange = useCallback((field: keyof JoinGameFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    const processedValue = field === 'gameId' ? value.toLowerCase() : value;
+    setFormData((prev) => ({ ...prev, [field]: processedValue }));
   }, []);
 
   const validateForm = useCallback((): boolean => {
@@ -62,12 +63,14 @@ export default function JoinGame() {
       setIsSubmitting(true);
 
       try {
+        const normalizedGameId = formData.gameId.trim().toLowerCase();
+
         const locationState: JoinGameLocationState = {
           playerName: formData.playerName.trim(),
           isAdmin: false,
         };
 
-        navigate(`/game/${formData.gameId.trim()}`, {
+        navigate(`/game/${normalizedGameId}`, {
           state: locationState,
         });
       } catch (error) {
@@ -129,7 +132,11 @@ export default function JoinGame() {
                     placeholder="Enter Game ID"
                     required
                     disabled={isSubmitting}
+                    className="lowercase"
                   />
+                  <FieldDescription className="text-xs text-muted-foreground">
+                    Game IDs are case-insensitive
+                  </FieldDescription>
                 </Field>
                 <Field>
                   <Button type="submit" disabled={isSubmitting}>

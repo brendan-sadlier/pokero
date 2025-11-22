@@ -18,7 +18,8 @@ type GameShareDialogProps = {
 
 export default function GameShareDialog({ gameId }: GameShareDialogProps) {
   const handleCopyLink = useCallback(() => {
-    const url = `${window.location.origin}/join?gameId=${gameId}`;
+    const normalizedGameId = gameId.toLowerCase();
+    const url = `${window.location.origin}/join?gameId=${normalizedGameId}`;
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -28,6 +29,8 @@ export default function GameShareDialog({ gameId }: GameShareDialogProps) {
         toast.error('Failed to copy link');
       });
   }, [gameId]);
+
+  const normalizedGameId = gameId.toLowerCase();
 
   return (
     <Dialog>
@@ -45,7 +48,7 @@ export default function GameShareDialog({ gameId }: GameShareDialogProps) {
         <div className="flex gap-2">
           <Input
             type="text"
-            value={`${window.location.origin}/join?gameId=${gameId}`}
+            value={`${window.location.origin}/join?gameId=${normalizedGameId}`}
             readOnly
             className="flex-1 font-mono"
           />
