@@ -5,14 +5,11 @@ import type { GameSettings as GameSettingsType } from '../../types';
 import GameShareDialog from './game-share-dialog';
 
 type GameHeaderProps = {
-  gameName?: string;
-  playerName?: string;
-  gameId?: string;
-  handleSettingsClick?: () => void;
-  handleCopyLink?: () => void;
-  onCopyId?: () => void;
-  isAdmin?: boolean;
-  showSettings?: boolean;
+  gameName: string;
+  playerName: string;
+  gameId: string;
+  handleCopyLink: () => void;
+  isAdmin: boolean;
   settings: GameSettingsType;
   onUpdate: (settings: Partial<GameSettingsType>) => void;
 };
@@ -29,9 +26,7 @@ export default function GameHeader({
   return (
     <header className="border-b border-border">
       <div className="px-6 py-4">
-        {/* Top Row: Game Info */}
         <div className="flex items-center justify-between gap-4">
-          {/* Left: Game Icon & Name */}
           <div className="flex items-center gap-3">
             <PokeroLogo className="h-8 w-8" />
             <div>
@@ -44,7 +39,7 @@ export default function GameHeader({
           </div>
 
           <div className="flex items-center gap-2">
-            <GameShareDialog gameId={gameId || ''} handleCopyLink={handleCopyLink} />
+            <GameShareDialog gameId={gameId} handleCopyLink={handleCopyLink} />
             <ThemeToggle />
             {isAdmin && <GameSettings settings={settings} onUpdate={onUpdate} />}
           </div>
