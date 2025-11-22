@@ -16,7 +16,7 @@ export default function Navbar() {
           >
             <Link to="/" className="flex items-center gap-2 text-xl font-display">
               <PokeroLogo className="size-6" />
-              <span className="mt-0.5 bg-linear-to-r from-primary to-secondary inline-block text-transparent bg-clip-text">
+              <span className="bg-linear-to-r from-primary to-secondary inline-block text-transparent bg-clip-text">
                 Pokero
               </span>
             </Link>
