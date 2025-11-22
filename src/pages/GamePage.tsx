@@ -53,11 +53,13 @@ export default function Game() {
     }
   }, []);
 
-  const { gameState, connected, connectionState, error, sendMessage, retryCount, reconnect } =
-    usePartyKit(gameId || null, {
+  const { gameState, connected, error, sendMessage, retryCount, reconnect } = usePartyKit(
+    gameId || null,
+    {
       playerId,
       onConnectionChange: handleConnectionChange,
-    });
+    },
+  );
 
   const state = location.state as LocationState | null;
 

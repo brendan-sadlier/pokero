@@ -33,7 +33,7 @@ jobs:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
         run: |
           echo "🚀 Deploying PartyKit server..."
-          npx partykit deploy --token $PARTYKIT_TOKEN
+          npx partykit deploy
           echo "✅ Deployment complete!"
 
       - name: Summary
