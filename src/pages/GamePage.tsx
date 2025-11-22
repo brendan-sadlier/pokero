@@ -9,7 +9,12 @@ import GameHeader from '../components/game/game-header';
 import VoteStatusCards from '../components/game/vote-status-card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
-import { generatePlayerId, getPlayerSession, savePlayerSession } from '../lib/sessionManager';
+import {
+  generatePlayerId,
+  getPlayerSession,
+  savePlayerSession,
+  updateSessionSettings,
+} from '../lib/sessionManager';
 import type {
   ConnectionState,
   CreateGameLocationState,
@@ -30,6 +35,7 @@ export default function Game() {
   const [playerId] = useState<string>(existingSession?.playerId || generatePlayerId());
   const [hasJoined, setHasJoined] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [settingsApplied, setSettingsApplied] = useState(false);
 
   const handleConnectionChange = useCallback((state: ConnectionState) => {
     if (state == 'CONNECTED') {
@@ -76,23 +82,57 @@ export default function Game() {
       name: playerName,
       isAdmin: isAdmin,
     });
-    savePlayerSession(gameId, playerId, playerName, isAdmin);
+
+    const initialSettings =
+      (state as CreateGameLocationState)?.settings || existingSession?.settings;
+    savePlayerSession(gameId, playerId, playerName, isAdmin, initialSettings);
+
     setHasJoined(true);
     setIsReconnecting(false);
-  }, [connected, hasJoined, gameId, playerId, playerName, isAdmin, isReconnecting, sendMessage]);
-
-  const [initialSettingsSent, setInitialSettingsSent] = useState(false);
+  }, [
+    connected,
+    hasJoined,
+    gameId,
+    playerId,
+    playerName,
+    isAdmin,
+    isReconnecting,
+    sendMessage,
+    state,
+    existingSession,
+  ]);
 
   useEffect(() => {
-    if (!gameState || !hasJoined || !isAdmin || initialSettingsSent) return;
+    if (!gameState || !hasJoined || !isAdmin || settingsApplied) return;
 
     const createGameState = state as CreateGameLocationState | null;
-    if (createGameState?.settings) {
-      console.log('Sending initial game settings:', createGameState.settings);
-      sendMessage({ type: 'updateSettings', settings: createGameState.settings });
-      setInitialSettingsSent(true);
+    const storedSettings = existingSession?.settings;
+    const locationSettings = createGameState?.settings;
+
+    const settingsToApply = storedSettings || locationSettings;
+
+    if (settingsToApply) {
+      const serverSettings = gameState.settings;
+      const settingsDiffer =
+        serverSettings.gameName !== settingsToApply.gameName ||
+        serverSettings.allowPlayersToReveal !== settingsToApply.allowPlayersToReveal ||
+        serverSettings.adminCanSpectate !== settingsToApply.adminCanSpectate;
+
+      if (settingsDiffer) {
+        console.log('Applying game settings for admin:', settingsToApply);
+        sendMessage({ type: 'updateSettings', settings: settingsToApply });
+        updateSessionSettings(gameId!, settingsToApply);
+      }
+
+      setSettingsApplied(true);
     }
-  }, [gameState, hasJoined, isAdmin, initialSettingsSent, state, sendMessage]);
+  }, [gameState, hasJoined, isAdmin, settingsApplied, state, existingSession, sendMessage, gameId]);
+
+  useEffect(() => {
+    if (gameState?.settings && gameId) {
+      updateSessionSettings(gameId, gameState.settings);
+    }
+  }, [gameState?.settings, gameId]);
 
   const currentPlayer = useMemo(
     () => (playerId && gameState ? gameState.players[playerId] : null),
@@ -159,8 +199,13 @@ export default function Game() {
         return;
       }
       sendMessage({ type: 'updateSettings', settings });
+
+      if (gameId && gameState) {
+        const updatedSettings = { ...gameState.settings, ...settings };
+        updateSessionSettings(gameId, updatedSettings);
+      }
     },
-    [isPlayerAdmin, sendMessage],
+    [isPlayerAdmin, sendMessage, gameId, gameState],
   );
 
   // Loading State

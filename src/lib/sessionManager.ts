@@ -1,4 +1,5 @@
 import { default as CryptoJS } from 'crypto-js';
+import type { GameSettings } from '../types';
 
 interface PlayerSession {
   playerId: string;
@@ -6,6 +7,7 @@ interface PlayerSession {
   gameId: string;
   isAdmin: boolean;
   timestamp: number;
+  settings?: GameSettings;
 }
 
 const SESSION_KEY_PREFIX = 'pokero_session_';
@@ -61,6 +63,7 @@ export function savePlayerSession(
   playerId: string,
   playerName: string,
   isAdmin: boolean,
+  settings?: GameSettings,
 ): void {
   if (!gameId || !playerId || !playerName) {
     console.error('Invalid parameters to save player session');
@@ -73,6 +76,7 @@ export function savePlayerSession(
       gameId,
       isAdmin,
       timestamp: Date.now(),
+      settings,
     };
     const encrypted = encrypt(JSON.stringify(session));
     localStorage.setItem(SESSION_KEY_PREFIX + gameId, encrypted);
@@ -85,6 +89,7 @@ export function savePlayerSession(
         gameId,
         isAdmin,
         timestamp: Date.now(),
+        settings,
       };
       sessionStorage.setItem(SESSION_KEY_PREFIX + gameId, JSON.stringify(session));
     } catch (storageError) {
@@ -125,6 +130,17 @@ export function getPlayerSession(gameId: string): PlayerSession | null {
   } catch (error) {
     console.error('Failed to get player session:', error);
     return null;
+  }
+}
+
+export function updateSessionSettings(gameId: string, settings: GameSettings): void {
+  if (!gameId) {
+    return;
+  }
+
+  const session = getPlayerSession(gameId);
+  if (session) {
+    savePlayerSession(gameId, session.playerId, session.playerName, session.isAdmin, settings);
   }
 }
 
@@ -191,6 +207,12 @@ export function updateSessionTimestamp(gameId: string): void {
 
   const session = getPlayerSession(gameId);
   if (session) {
-    savePlayerSession(gameId, session.playerId, session.playerName, session.isAdmin);
+    savePlayerSession(
+      gameId,
+      session.playerId,
+      session.playerName,
+      session.isAdmin,
+      session.settings,
+    );
   }
 }
