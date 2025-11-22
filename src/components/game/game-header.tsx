@@ -8,7 +8,6 @@ type GameHeaderProps = {
   gameName: string;
   playerName: string;
   gameId: string;
-  handleCopyLink: () => void;
   isAdmin: boolean;
   settings: GameSettingsType;
   onUpdate: (settings: Partial<GameSettingsType>) => void;
@@ -18,7 +17,6 @@ export default function GameHeader({
   gameName,
   playerName,
   gameId,
-  handleCopyLink,
   isAdmin,
   settings,
   onUpdate,
@@ -39,7 +37,7 @@ export default function GameHeader({
           </div>
 
           <div className="flex items-center gap-2">
-            <GameShareDialog gameId={gameId} handleCopyLink={handleCopyLink} />
+            <GameShareDialog gameId={gameId} />
             <ThemeToggle />
             {isAdmin && <GameSettings settings={settings} onUpdate={onUpdate} />}
           </div>

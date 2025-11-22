@@ -167,6 +167,8 @@ export default class PokeroServicer implements Party.Server {
       }
     }
     this.broadcast();
+
+    console.log('Game settings updated:', this.gameState.settings);
   }
 
   broadcast() {

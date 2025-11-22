@@ -6,7 +6,7 @@ import { usePartyKit } from '../lib/usePartyKit';
 import VotingCards from '../components/game/voting-cards';
 import RoundStats from '../components/game/round-stats';
 import GameHeader from '../components/game/game-header';
-import VoteStatusCards, { type Player } from '../components/game/vote-status-card';
+import VoteStatusCards from '../components/game/vote-status-card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { generatePlayerId, getPlayerSession, savePlayerSession } from '../lib/sessionManager';
@@ -81,14 +81,18 @@ export default function Game() {
     setIsReconnecting(false);
   }, [connected, hasJoined, gameId, playerId, playerName, isAdmin, isReconnecting, sendMessage]);
 
+  const [initialSettingsSent, setInitialSettingsSent] = useState(false);
+
   useEffect(() => {
-    if (!gameState || !hasJoined || !isAdmin) return;
+    if (!gameState || !hasJoined || !isAdmin || initialSettingsSent) return;
 
     const createGameState = state as CreateGameLocationState | null;
     if (createGameState?.settings) {
+      console.log('Sending initial game settings:', createGameState.settings);
       sendMessage({ type: 'updateSettings', settings: createGameState.settings });
+      setInitialSettingsSent(true);
     }
-  }, [gameState, hasJoined, isAdmin, state, sendMessage]);
+  }, [gameState, hasJoined, isAdmin, initialSettingsSent, state, sendMessage]);
 
   const currentPlayer = useMemo(
     () => (playerId && gameState ? gameState.players[playerId] : null),
@@ -159,31 +163,6 @@ export default function Game() {
     [isPlayerAdmin, sendMessage],
   );
 
-  const handleCopyLink = useCallback(() => {
-    const url = `${window.location.origin}/join?gameId=${gameId}`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => {
-        toast.success('Game link copied to clipboard!');
-      })
-      .catch(() => {
-        toast.error('Failed to copy link');
-      });
-  }, [gameId]);
-
-  const copyGameId = useCallback(() => {
-    if (gameId) {
-      navigator.clipboard
-        .writeText(gameId)
-        .then(() => {
-          toast.success('Game ID copied to clipboard!');
-        })
-        .catch(() => {
-          toast.error('Failed to copy Game ID');
-        });
-    }
-  }, [gameId]);
-
   // Loading State
   if (!connected && !error) {
     return (
@@ -232,8 +211,7 @@ export default function Game() {
       <GameHeader
         gameName={gameState.settings.gameName}
         playerName={currentPlayer.name}
-        gameId={gameId?.toUpperCase()}
-        handleCopyLink={handleCopyLink}
+        gameId={gameId || ''}
         isAdmin={isPlayerAdmin}
         settings={gameState.settings}
         onUpdate={handleUpdateSettings}

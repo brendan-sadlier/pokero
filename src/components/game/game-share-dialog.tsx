@@ -9,13 +9,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
+import { useCallback } from 'react';
+import { toast } from 'sonner';
 
 type GameShareDialogProps = {
   gameId: string;
-  handleCopyLink?: () => void;
 };
 
-export default function GameShareDialog({ gameId, handleCopyLink }: GameShareDialogProps) {
+export default function GameShareDialog({ gameId }: GameShareDialogProps) {
+  const handleCopyLink = useCallback(() => {
+    const url = `${window.location.origin}/join?gameId=${gameId}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        toast.success('Game link copied to clipboard!');
+      })
+      .catch(() => {
+        toast.error('Failed to copy link');
+      });
+  }, [gameId]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -30,7 +43,12 @@ export default function GameShareDialog({ gameId, handleCopyLink }: GameShareDia
         </DialogHeader>
 
         <div className="flex gap-2">
-          <Input type="text" value={gameId} readOnly className="flex-1 font-mono" />
+          <Input
+            type="text"
+            value={`${window.location.origin}/join?gameId=${gameId}`}
+            readOnly
+            className="flex-1 font-mono"
+          />
         </div>
 
         <div className="flex flex-col gap-2 justify-center">
