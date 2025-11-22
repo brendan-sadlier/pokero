@@ -1,0 +1,135 @@
+name: Deploy to PartyKit
+
+on:
+  push:
+    branches:
+      - main
+      - production
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # Job 1: Deploy PartyKit Server
+  deploy-partykit:
+    name: Deploy PartyKit Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to PartyKit
+        env:
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+        run: |
+          npx partykit deploy --token $PARTYKIT_TOKEN
+
+      - name: Deployment Summary
+        run: |
+          echo "✅ PartyKit server deployed successfully"
+          echo "🔗 Server URL: https://${{ secrets.VITE_PARTYKIT_HOST }}"
+
+  # Job 2: Build and Test Frontend
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: deploy-partykit
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        run: |
+          echo "VITE_PARTYKIT_HOST=${{ secrets.VITE_PARTYKIT_HOST }}" > .env.production
+          echo "VITE_SESSION_ENCRYPTION_KEY=${{ secrets.VITE_SESSION_ENCRYPTION_KEY }}" >> .env.production
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_PARTYKIT_HOST: ${{ secrets.VITE_PARTYKIT_HOST }}
+          VITE_SESSION_ENCRYPTION_KEY: ${{ secrets.VITE_SESSION_ENCRYPTION_KEY }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: dist/
+          retention-days: 7
+
+      - name: Build Summary
+        run: |
+          echo "✅ Frontend built successfully"
+          echo "📦 Build artifacts uploaded"
+
+  # Job 3: Deploy to Vercel (Optional - uncomment if using Vercel)
+  # deploy-vercel:
+  #   name: Deploy to Vercel
+  #   runs-on: ubuntu-latest
+  #   needs: build-frontend
+  #   if: github.ref == 'refs/heads/main'
+  #
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Download build artifacts
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: frontend-build
+  #         path: dist/
+  #
+  #     - name: Deploy to Vercel
+  #       uses: amondnet/vercel-action@v25
+  #       with:
+  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
+  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+  #         vercel-args: '--prod'
+  #         working-directory: ./
+
+  # Notification job (runs after all deployments)
+  notify:
+    name: Deployment Complete
+    runs-on: ubuntu-latest
+    needs: [deploy-partykit, build-frontend]
+    if: always()
+
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy-partykit.result }}" == "success" ] && [ "${{ needs.build-frontend.result }}" == "success" ]; then
+            echo "🎉 All deployments completed successfully!"
+            echo "🚀 PartyKit: https://${{ secrets.VITE_PARTYKIT_HOST }}"
+            exit 0
+          else
+            echo "❌ Deployment failed. Check the logs above."
+            exit 1
+          fi

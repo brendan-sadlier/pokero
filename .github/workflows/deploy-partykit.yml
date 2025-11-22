@@ -1,0 +1,46 @@
+name: Deploy PartyKit Server
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'party/**'
+      - 'partykit.json'
+      - '.github/workflows/deploy-partykit.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to PartyKit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to PartyKit
+        env:
+          PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+        run: |
+          echo "🚀 Deploying PartyKit server..."
+          npx partykit deploy --token $PARTYKIT_TOKEN
+          echo "✅ Deployment complete!"
+
+      - name: Summary
+        run: |
+          echo "### Deployment Complete 🎉" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Server URL:** \`https://${{ secrets.VITE_PARTYKIT_HOST }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
