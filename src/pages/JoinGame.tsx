@@ -1,35 +1,83 @@
 /* eslint-disable no-undef */
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import type { JoinGameFormData, JoinGameLocationState } from '../types';
+import { toast } from 'sonner';
 
 export default function JoinGame() {
   const navigate = useNavigate();
-  const [gameId, setGameId] = useState('');
-  const [playerName, setPlayerName] = useState('');
 
-  const handleJoin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const [searchParams] = useSearchParams();
 
-    if (!playerName.trim()) {
-      alert('Please enter your name.');
-      return;
+  const [formData, setFormData] = useState<JoinGameFormData>({
+    playerName: '',
+    gameId: searchParams.get('gameId') || '',
+  });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleInputChange = useCallback((field: keyof JoinGameFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const validateForm = useCallback((): boolean => {
+    if (!formData.playerName.trim()) {
+      toast.error('Please enter your name');
+      return false;
     }
 
-    if (!gameId.trim()) {
-      alert('Please enter a valid Game ID.');
-      return;
+    if (formData.playerName.length > 50) {
+      toast.error('Name cannot exceed 50 characters');
+      return false;
     }
 
-    navigate(`/game/${gameId.trim()}`, {
-      state: { playerName: playerName.trim(), isAdmin: false },
-    });
-  };
+    if (!formData.gameId.trim()) {
+      toast.error('Please enter a valid Game ID');
+      return false;
+    }
+
+    // Basic Game ID format check (alphanumeric, reasonable length)
+    const gameIdPattern = /^[a-z0-9]{5,15}$/;
+    if (!gameIdPattern.test(formData.gameId.trim())) {
+      toast.error('Invalid Game ID format');
+      return false;
+    }
+    return true;
+  }, [formData]);
+
+  const handleJoin = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      if (isSubmitting) return;
+
+      if (!validateForm()) return;
+
+      setIsSubmitting(true);
+
+      try {
+        const locationState: JoinGameLocationState = {
+          playerName: formData.playerName.trim(),
+          isAdmin: false,
+        };
+
+        navigate(`/game/${formData.gameId.trim()}`, {
+          state: locationState,
+        });
+      } catch (error) {
+        console.error('Error joining game:', error);
+        toast.error('Failed to join the game. Please try again.');
+        setIsSubmitting(false);
+      }
+    },
+    [formData, isSubmitting, navigate, validateForm],
+  );
 
   return (
     <div className="relative flex items-center justify-center min-h-screen w-screen bg-background overflow-hidden">
@@ -58,11 +106,14 @@ export default function JoinGame() {
                   <FieldLabel htmlFor="name">Name</FieldLabel>
                   <Input
                     id="playerName"
+                    name="playerName"
                     type="text"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
+                    value={formData.playerName}
+                    onChange={(e) => handleInputChange('playerName', e.target.value)}
                     placeholder="Enter your name"
                     required
+                    maxLength={50}
+                    disabled={isSubmitting}
                   />
                 </Field>
                 <Field>
@@ -71,15 +122,25 @@ export default function JoinGame() {
                   </div>
                   <Input
                     id="gameId"
+                    name="gameId"
                     type="text"
-                    value={gameId}
-                    onChange={(e) => setGameId(e.target.value)}
+                    value={formData.gameId}
+                    onChange={(e) => handleInputChange('gameId', e.target.value)}
                     placeholder="Enter Game ID"
                     required
+                    disabled={isSubmitting}
                   />
                 </Field>
                 <Field>
-                  <Button type="submit">Join Game</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="animate-spin" /> Joining...
+                      </>
+                    ) : (
+                      'Join Game'
+                    )}
+                  </Button>
                   <FieldDescription className="text-center">
                     Don&apos;t have a Game ID? <Link to="/create">Create a Game</Link>
                   </FieldDescription>

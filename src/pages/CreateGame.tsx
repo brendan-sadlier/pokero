@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/ui/field';
@@ -16,38 +16,80 @@ import {
 } from '../components/ui/accordion';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import type { CreateGameFormData, CreateGameLocationState } from '../types';
+import { toast } from 'sonner';
 
 export default function CreateGame() {
   const navigate = useNavigate();
-  const [gameName, setGameName] = useState('');
-  const [playerName, setPlayerName] = useState('');
-  const [allowPlayersToReveal, setAllowPlayersToReveal] = useState(true);
-  const [adminCanSpectate, setAdminCanSpectate] = useState(false);
+  const [formData, setFormData] = useState<CreateGameFormData>({
+    playerName: '',
+    gameName: '',
+    allowPlayersToReveal: true,
+    adminCanSpectate: false,
+  });
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    if (!playerName.trim()) {
-      alert('Please enter your name');
-      return;
+  const handleInputChange = useCallback(
+    (field: keyof CreateGameFormData, value: string | boolean) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
+
+  const validateForm = useCallback((): boolean => {
+    if (!formData.playerName.trim()) {
+      toast.error('Please enter your name');
+      return false;
     }
 
-    const gameId = generateGameId();
-    const settings = {
-      gameName: gameName.trim() || 'Planning Poker',
-      allowPlayersToReveal,
-      adminCanSpectate,
-    };
+    if (formData.playerName.length > 50) {
+      toast.error('Name cannot exceed 50 characters');
+      return false;
+    }
 
-    // Navigate to game with state
-    navigate(`/game/${gameId}`, {
-      state: {
-        playerName: playerName.trim(),
-        isAdmin: true,
-        settings,
-      },
-    });
-  };
+    if (formData.gameName.length > 100) {
+      toast.error('Game name cannot exceed 100 characters');
+      return false;
+    }
+
+    return true;
+  }, [formData]);
+
+  const handleCreate = useCallback(
+    (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+
+      if (isSubmitting) return;
+
+      if (!validateForm()) return;
+
+      setIsSubmitting(true);
+
+      try {
+        const gameId = generateGameId();
+        const locationState: CreateGameLocationState = {
+          playerName: formData.playerName.trim(),
+          isAdmin: true,
+          settings: {
+            gameName: formData.gameName.trim() || 'Planning Poker',
+            allowPlayersToReveal: formData.allowPlayersToReveal,
+            adminCanSpectate: formData.adminCanSpectate,
+          },
+        };
+
+        // Navigate to game with state
+        navigate(`/game/${gameId}`, {
+          state: locationState,
+        });
+      } catch (error) {
+        console.error('Error creating game:', error);
+        toast.error('Failed to create game. Please try again.');
+        setIsSubmitting(false);
+      }
+    },
+    [formData, isSubmitting, navigate, validateForm],
+  );
 
   return (
     <div className="relative flex items-center justify-center min-h-screen w-screen bg-background overflow-hidden">
@@ -76,11 +118,14 @@ export default function CreateGame() {
                   <FieldLabel htmlFor="playerName">Name</FieldLabel>
                   <Input
                     id="playerName"
+                    name="playerName"
                     type="text"
-                    value={playerName}
-                    onChange={(e) => setPlayerName(e.target.value)}
+                    value={formData.playerName}
+                    onChange={(e) => handleInputChange('playerName', e.target.value)}
                     placeholder="Enter your name"
                     required
+                    maxLength={50}
+                    disabled={isSubmitting}
                   />
                 </Field>
                 <Field>
@@ -89,10 +134,13 @@ export default function CreateGame() {
                   </div>
                   <Input
                     id="gameName"
+                    name="gameName"
                     type="text"
-                    value={gameName}
-                    onChange={(e) => setGameName(e.target.value)}
+                    value={formData.gameName}
+                    onChange={(e) => handleInputChange('gameName', e.target.value)}
                     placeholder="Leave blank for 'Planning Poker'"
+                    maxLength={100}
+                    disabled={isSubmitting}
                   />
                 </Field>
                 <Accordion type="single" collapsible className="w-full px-2 ">
@@ -103,8 +151,11 @@ export default function CreateGame() {
                         <div className="flex items-center space-x-2">
                           <Switch
                             id="playerReveal"
-                            checked={allowPlayersToReveal}
-                            onCheckedChange={(checked) => setAllowPlayersToReveal(checked)}
+                            checked={formData.allowPlayersToReveal}
+                            onCheckedChange={(checked) =>
+                              handleInputChange('allowPlayersToReveal', checked)
+                            }
+                            disabled={isSubmitting}
                           />
                           <Label htmlFor="playerReveal">Allow All Players to Reveal Cards</Label>
                         </div>
@@ -113,8 +164,11 @@ export default function CreateGame() {
                         <div className="flex items-center space-x-2">
                           <Switch
                             id="spectatorMode"
-                            checked={adminCanSpectate}
-                            onCheckedChange={(checked) => setAdminCanSpectate(checked)}
+                            checked={formData.adminCanSpectate}
+                            onCheckedChange={(checked) =>
+                              handleInputChange('adminCanSpectate', checked)
+                            }
+                            disabled={isSubmitting}
                           />
                           <Label htmlFor="spectatorMode">Spectator Mode</Label>
                         </div>
@@ -123,7 +177,15 @@ export default function CreateGame() {
                   </AccordionItem>
                 </Accordion>
                 <Field>
-                  <Button type="submit">Create Game</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <LoaderCircle className="animate-spin" /> Creating...
+                      </>
+                    ) : (
+                      'Create Game'
+                    )}
+                  </Button>
                   <FieldDescription className="text-center">
                     Already have a game? <Link to="/join">Join a Game</Link>
                   </FieldDescription>
