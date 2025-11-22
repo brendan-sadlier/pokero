@@ -35,6 +35,7 @@ jobs:
       - name: Deploy to PartyKit
         env:
           PARTYKIT_TOKEN: ${{ secrets.PARTYKIT_TOKEN }}
+          PARTYKIT_LOGIN: ${{ secrets.PARTYKIT_LOGIN }}
         run: |
           npx partykit deploy
 
