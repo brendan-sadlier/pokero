@@ -1,7 +1,7 @@
 <a id="readme-top"></a>
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brendan-sadlier/pokero/deploy.yml?style=for-the-badge)
-![License](https://img.shields.io/github/license/brendan-sadlier/pokero?style=for-the-badge)
+[![License: CC BY-NC-SA 4.0](https://img.shields.io/badge/License-CC_BY--NC--SA_4.0-lightgrey.svg?style=for-the-badge)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 
 <!-- PROJECT LOGO -->
 <br />
