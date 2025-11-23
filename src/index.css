@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Parkinsans&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
@@ -8,8 +9,6 @@
 :root {
   --display-family: 'Bungee', 'sans-serif';
   --display-weight: 400;
-  --text-family: 'Parkinsans', 'sans-serif';
-  --text-weight: 300, 400, 500, 600, 700, 800;
 
   --base-50: oklch(0.9842 0.0032 228.71);
   --base-100: oklch(0.9682 0.0064 229.74);
@@ -120,7 +119,6 @@
 
 @theme inline {
   --font-display: var(--display-family);
-  --font-text: var(--text-family);
 
   --color-base-50: var(--base-50);
   --color-base-100: var(--base-100);
@@ -204,11 +202,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Outfit', sans-serif;
   }
   .font-display {
     font-weight: var(--display-weight);
-  }
-  .font-text {
-    font-weight: var(--text-weight);
   }
 }

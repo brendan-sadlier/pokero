@@ -113,7 +113,7 @@ export default function JoinGame() {
                     type="text"
                     value={formData.playerName}
                     onChange={(e) => handleInputChange('playerName', e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder="Enter your Name"
                     required
                     maxLength={50}
                     disabled={isSubmitting}
@@ -132,7 +132,6 @@ export default function JoinGame() {
                     placeholder="Enter Game ID"
                     required
                     disabled={isSubmitting}
-                    className="lowercase"
                   />
                   <FieldDescription className="text-xs text-muted-foreground">
                     Game IDs are case-insensitive
