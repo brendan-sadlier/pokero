@@ -1,6 +1,7 @@
 <a id="readme-top"></a>
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/brendan-sadlier/pokero/deploy.yml?style=for-the-badge)
+![License](https://img.shields.io/github/license/brendan-sadlier/pokero?style=for-the-badge)
 
 <!-- PROJECT LOGO -->
 <br />
@@ -113,7 +114,15 @@ Don't forget to give the project a star! Thanks again!
 
 ## 📜 License
 
-Distributed under the project_license. See `LICENSE.txt` for more information.
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0)**.
+
+You are free to use, modify, and share this project for **non-commercial purposes**, as long as you:
+
+- Provide attribution to **Brendan Sadlier**
+- Share any derivative works under the **same license**
+- Do not use the project, name, or code for commercial gain
+
+🔗 Full license: https://creativecommons.org/licenses/by-nc-sa/4.0/
 
 [product-screenshot]: public/pokero-screenshot.png
 [Vite]: https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white
