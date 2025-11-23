@@ -17,7 +17,7 @@ export default function Home() {
           >
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-normal">
               <motion.span
-                className="bg-linear-to-r from-primary to-secondary text-transparent bg-clip-text block mb-2 pb-1"
+                className="bg-linear-to-r from-primary to-secondary text-transparent bg-clip-text block mb-2 pb-2"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.8 }}

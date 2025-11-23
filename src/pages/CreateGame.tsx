@@ -122,7 +122,7 @@ export default function CreateGame() {
                     type="text"
                     value={formData.playerName}
                     onChange={(e) => handleInputChange('playerName', e.target.value)}
-                    placeholder="Enter your name"
+                    placeholder="Enter your Name"
                     required
                     maxLength={50}
                     disabled={isSubmitting}

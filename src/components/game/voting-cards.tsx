@@ -1,4 +1,3 @@
-import { Coffee } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 interface VotingCardsProps {
@@ -42,14 +41,13 @@ export default function VotingCards({ onVote, selectedVote, disabled }: VotingCa
             );
           })}
 
-          {/* Coffee Card */}
           <button
             disabled={disabled}
-            onClick={() => !disabled && onVote('coffee')}
+            onClick={() => !disabled && onVote('?')}
             className={cn(
-              'w-16 h-24 rounded-lg border-2 flex items-center justify-center text-2xl transition-all',
+              'w-16 h-24 rounded-lg border-2 flex items-center justify-center text-xl transition-all',
               disabled && 'opacity-40 cursor-not-allowed',
-              selectedVote === 'coffee'
+              selectedVote === '?'
                 ? `
                   bg-primary text-white border-primary scale-110 -translate-y-2
                   `
@@ -59,7 +57,7 @@ export default function VotingCards({ onVote, selectedVote, disabled }: VotingCa
                   `,
             )}
           >
-            <Coffee />
+            ?
           </button>
         </div>
       </div>
