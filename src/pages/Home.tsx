@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/navbar';
 import { Button } from '../components/ui/button';
 import { motion } from 'framer-motion';
+import Logo from '../components/logo';
 
 export default function Home() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col">
       <Navbar />
-      <div className="bg-background flex-1 overflow-hidden relative flex items-center justify-center">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="bg-background flex-1 overflow-hidden relative flex items-center justify-center min-h-screen">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10 ">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -111,6 +112,39 @@ export default function Home() {
           />
         </div>
       </div>
+      <footer className="py-6">
+        <div className="mx-auto max-w-5xl px-6">
+          <Link to="/" aria-label="go home" className="mx-auto flex size-fit items-center gap-2">
+            <Logo className="size-5" />
+            <h1 className="font-display">Pokero</h1>
+          </Link>
+
+          <div className="flex flex-wrap justify-center gap-6 text-sm py-3">
+            <a
+              href="https://github.com/brendan-sadlier/pokero"
+              className="text-muted-foreground hover:text-primary block duration-150"
+            >
+              <span>GitHub</span>
+            </a>
+            <a
+              href="https://github.com/brendan-sadlier/pokero/issues"
+              className="text-muted-foreground hover:text-primary block duration-150"
+            >
+              <span>Report an Issue</span>
+            </a>
+            <a
+              href="https://github.com/brendan-sadlier/pokero/discussions/categories/ideas"
+              className="text-muted-foreground hover:text-primary block duration-150"
+            >
+              <span>Suggest a Feature</span>
+            </a>
+          </div>
+          <span className="text-muted-foreground block text-center text-sm">
+            {' '}
+            © {new Date().getFullYear()} Pokero, All rights reserved
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
