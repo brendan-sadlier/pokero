@@ -134,4 +134,4 @@ You are free to use, modify, and share this project for **non-commercial purpose
 [Tailwindcss.com]: https://img.shields.io/badge/Tailwind-06B6D4?style=for-the-badge&logo=tailwind-css&logoColor=white
 [Tailwindcss-url]: https://tailwindcss.com/
 [Shadcn]: https://img.shields.io/badge/shadcn/ui-%23000000?style=for-the-badge&logo=shadcnui&logoColor=white
-[shadcn-url]: https://jquery.com
+[shadcn-url]: https://ui.shadcn.com/
