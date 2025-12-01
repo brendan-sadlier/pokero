@@ -107,7 +107,7 @@ export default function CreateGame() {
       <div className="relative z-10 w-full max-w-sm flex flex-col gap-6">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="font-display text-pretty text-primary text-xl">
+            <CardTitle className="font-ruska text-pretty text-primary text-xl">
               Create a Game
             </CardTitle>
           </CardHeader>
