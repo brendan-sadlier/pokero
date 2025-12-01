@@ -14,9 +14,9 @@ export default function Navbar() {
             transition={{ duration: 0.5 }}
             className="flex items-center"
           >
-            <Link to="/" className="flex items-center gap-2 text-xl font-display">
+            <Link to="/" className="flex items-center gap-2 text-xl font-ruska">
               <PokeroLogo className="size-6" />
-              <span className="bg-linear-to-r from-primary to-secondary inline-block text-transparent bg-clip-text">
+              <span className="bg-linear-to-r from-primary to-secondary inline-block text-transparent bg-clip-text mb-0.5">
                 Pokero
               </span>
             </Link>

@@ -116,7 +116,7 @@ export default function Home() {
         <div className="mx-auto max-w-5xl px-6">
           <Link to="/" aria-label="go home" className="mx-auto flex size-fit items-center gap-2">
             <Logo className="size-5" />
-            <h1 className="font-display">Pokero</h1>
+            <h1 className="font-ruska mb-0.5">Pokero</h1>
           </Link>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm py-3">

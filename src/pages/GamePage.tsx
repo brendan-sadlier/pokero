@@ -273,7 +273,7 @@ export default function Game() {
       />
 
       <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4">
-        <div className="flex flex-col items-center justify-center flex-grow w-full">
+        <div className="flex flex-col items-center justify-center grow w-full">
           <div className="w-full flex justify-center sticky bottom-0 pb-4">
             <VoteStatusCards players={players} votesRevealed={gameState.votesRevealed} />
           </div>
