@@ -63,6 +63,9 @@ export default class PokeroServicer implements Party.Server {
         case 'updateSettings':
           this.handleUpdateSettings(sender.id, msg.settings);
           break;
+        case 'leave':
+          this.handleLeave(sender.id);
+          break;
       }
     } catch (error) {
       console.error('Error handling message:', error);
@@ -169,6 +172,34 @@ export default class PokeroServicer implements Party.Server {
     this.broadcast();
 
     console.log('Game settings updated:', this.gameState.settings);
+  }
+
+  handleLeave(playerId: string) {
+    if (!this.gameState) return;
+
+    const player = this.gameState.players[playerId];
+    if (!player) return;
+
+    const playerName = player.name;
+    const wasAdmin = player.isAdmin;
+
+    delete this.gameState.players[playerId];
+
+    console.log(`Player left: ${playerName} (${playerId})`);
+
+    if (wasAdmin) {
+      const remainingPlayers = Object.values(this.gameState.players);
+      if (remainingPlayers.length > 0) {
+        const newAdmin = remainingPlayers[0];
+        newAdmin.isAdmin = true;
+        this.gameState.adminId = newAdmin.id;
+        console.log(`New admin assigned: ${newAdmin.name} (${newAdmin.id})`);
+      }
+    }
+
+    this.room.broadcast(JSON.stringify({ type: 'playerLeft', playerId, playerName }));
+
+    this.broadcast();
   }
 
   broadcast() {

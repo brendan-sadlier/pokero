@@ -3,6 +3,7 @@ import { ThemeToggle } from '../theme-toggle';
 import GameSettings from './game-settings';
 import type { GameSettings as GameSettingsType } from '../../types';
 import GameShareDialog from './game-share-dialog';
+import LeaveGameDialog from './leave-game-dialog';
 
 type GameHeaderProps = {
   gameName: string;
@@ -11,6 +12,7 @@ type GameHeaderProps = {
   isAdmin: boolean;
   settings: GameSettingsType;
   onUpdate: (settings: Partial<GameSettingsType>) => void;
+  onLeave: () => void;
 };
 
 export default function GameHeader({
@@ -20,6 +22,7 @@ export default function GameHeader({
   isAdmin,
   settings,
   onUpdate,
+  onLeave,
 }: GameHeaderProps) {
   return (
     <header className="border-b border-border">
@@ -40,6 +43,7 @@ export default function GameHeader({
             <GameShareDialog gameId={gameId} />
             <ThemeToggle />
             {isAdmin && <GameSettings settings={settings} onUpdate={onUpdate} />}
+            <LeaveGameDialog onLeave={onLeave} isAdmin={isAdmin} />
           </div>
         </div>
       </div>

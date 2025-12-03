@@ -10,6 +10,7 @@ import VoteStatusCards from '../components/game/vote-status-card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import {
+  clearPlayerSession,
   generatePlayerId,
   getPlayerSession,
   savePlayerSession,
@@ -218,6 +219,15 @@ export default function Game() {
     [isPlayerAdmin, sendMessage, gameId, gameState],
   );
 
+  const handleLeaveGame = useCallback(() => {
+    if (!gameId) return;
+
+    sendMessage({ type: 'leave' });
+    clearPlayerSession(gameId);
+    toast.success('You have left the game.');
+    navigate('/');
+  }, [gameId, sendMessage, navigate]);
+
   // Loading State
   if (!connected && !error) {
     return (
@@ -270,6 +280,7 @@ export default function Game() {
         isAdmin={isPlayerAdmin}
         settings={gameState.settings}
         onUpdate={handleUpdateSettings}
+        onLeave={handleLeaveGame}
       />
 
       <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4">
