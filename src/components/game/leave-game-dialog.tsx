@@ -1,4 +1,4 @@
-import { DoorOpen } from 'lucide-react';
+import { Crown, DoorOpen } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,10 +14,11 @@ import { Button } from '../ui/button';
 
 type LeaveGameDialogProps = {
   onLeave: () => void;
+  onEndGame?: () => void;
   isAdmin: boolean;
 };
 
-export default function LeaveGameDialog({ onLeave, isAdmin }: LeaveGameDialogProps) {
+export default function LeaveGameDialog({ onLeave, onEndGame, isAdmin }: LeaveGameDialogProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -46,8 +47,17 @@ export default function LeaveGameDialog({ onLeave, isAdmin }: LeaveGameDialogPro
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter>
+        <AlertDialogFooter className={isAdmin ? 'flex-col sm:flex-row gap-2' : ''}>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
+          {isAdmin && onEndGame && (
+            <AlertDialogAction
+              onClick={onEndGame}
+              className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 hover:cursor-pointer"
+            >
+              <Crown />
+              End Game
+            </AlertDialogAction>
+          )}
           <AlertDialogAction
             onClick={onLeave}
             className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 hover:cursor-pointer"

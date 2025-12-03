@@ -16,6 +16,8 @@ const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST || 'localhost:1999';
 interface UsePartyKitOptions {
   playerId?: string;
   onConnectionChange?: (state: ConnectionState) => void;
+  onGameEnded?: (endedBy: string) => void;
+  onPlayerLeft?: (playerName: string) => void;
 }
 
 interface UsePartyKitReturn {
@@ -106,15 +108,21 @@ export function usePartyKit(
         try {
           const message: ServerMessage = JSON.parse(event.data);
 
-          if (message.type === 'gameState') {
-            setGameState(message.state);
-          } else if (message.type === 'error') {
-            const gameError = createGameError(
-              ErrorCode.UNKNOWN_ERROR,
-              message.message,
-              message.message,
-            );
-            setError(gameError);
+          switch (message.type) {
+            case 'gameState':
+              setGameState(message.state);
+              break;
+            case 'error':
+              console.error('Server error:', message.message);
+              break;
+            case 'playerLeft':
+              console.log(`Player ${message.playerName} left the game`);
+              options?.onPlayerLeft?.(message.playerName);
+              break;
+            case 'gameEnded':
+              console.log(`Game ended by ${message.endedBy}`);
+              options?.onGameEnded?.(message.endedBy);
+              break;
           }
         } catch (err) {
           console.error('Failed to parse message:', err);

@@ -66,6 +66,9 @@ export default class PokeroServicer implements Party.Server {
         case 'leave':
           this.handleLeave(sender.id);
           break;
+        case 'endGame':
+          this.handleEndGame(sender.id);
+          break;
       }
     } catch (error) {
       console.error('Error handling message:', error);
@@ -202,6 +205,20 @@ export default class PokeroServicer implements Party.Server {
     this.broadcast();
   }
 
+  handleEndGame(playerId: string) {
+    if (!this.gameState) return;
+
+    const player = this.gameState.players[playerId];
+    if (!player || !player.isAdmin) return;
+
+    const adminName = player.name;
+    console.log(`Game ${this.room.id} ended by admin: ${adminName} (${playerId})`);
+
+    this.room.broadcast(JSON.stringify({ type: 'gameEnded', endedBy: adminName }));
+
+    this.gameState = null;
+  }
+
   broadcast() {
     if (!this.gameState) return;
 
@@ -212,6 +229,7 @@ export default class PokeroServicer implements Party.Server {
 
   onClose(conn: Party.Connection) {
     console.log(`Connection closed: ${conn.id} from room ${this.room.id}`);
+    this.handleLeave(conn.id);
   }
 }
 

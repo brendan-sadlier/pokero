@@ -13,6 +13,7 @@ type GameHeaderProps = {
   settings: GameSettingsType;
   onUpdate: (settings: Partial<GameSettingsType>) => void;
   onLeave: () => void;
+  onEndGame: () => void;
 };
 
 export default function GameHeader({
@@ -23,6 +24,7 @@ export default function GameHeader({
   settings,
   onUpdate,
   onLeave,
+  onEndGame,
 }: GameHeaderProps) {
   return (
     <header className="border-b border-border">
@@ -43,7 +45,11 @@ export default function GameHeader({
             <GameShareDialog gameId={gameId} />
             <ThemeToggle />
             {isAdmin && <GameSettings settings={settings} onUpdate={onUpdate} />}
-            <LeaveGameDialog onLeave={onLeave} isAdmin={isAdmin} />
+            <LeaveGameDialog
+              onLeave={onLeave}
+              onEndGame={isAdmin ? onEndGame : undefined}
+              isAdmin={isAdmin}
+            />
           </div>
         </div>
       </div>

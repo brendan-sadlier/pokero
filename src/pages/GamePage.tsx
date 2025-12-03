@@ -54,13 +54,49 @@ export default function Game() {
     }
   }, []);
 
+  const handleGameEnded = useCallback(
+    (endedBy: string) => {
+      if (gameId) {
+        clearPlayerSession(gameId);
+      }
+      toast.info(`${endedBy} has ended the game.`, {
+        description: 'You will be redirected to the home page.',
+        duration: 3000,
+      });
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
+    },
+    [gameId, navigate],
+  );
+
+  const handlePlayerLeft = useCallback((playerName: string) => {
+    toast.info(`${playerName} has left the game.`);
+  }, []);
+
   const { gameState, connected, error, sendMessage, retryCount, reconnect } = usePartyKit(
     gameId || null,
     {
       playerId,
       onConnectionChange: handleConnectionChange,
+      onGameEnded: handleGameEnded,
+      onPlayerLeft: handlePlayerLeft,
     },
   );
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (gameId) {
+        clearPlayerSession(gameId);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [gameId]);
 
   const state = location.state as LocationState | null;
 
@@ -228,6 +264,15 @@ export default function Game() {
     navigate('/');
   }, [gameId, sendMessage, navigate]);
 
+  const handleEndGame = useCallback(() => {
+    if (!gameId || !isPlayerAdmin) return;
+
+    sendMessage({ type: 'endGame' });
+    clearPlayerSession(gameId);
+    toast.success('You have ended the game.');
+    navigate('/');
+  }, [gameId, isPlayerAdmin, sendMessage, navigate]);
+
   // Loading State
   if (!connected && !error) {
     return (
@@ -281,6 +326,7 @@ export default function Game() {
         settings={gameState.settings}
         onUpdate={handleUpdateSettings}
         onLeave={handleLeaveGame}
+        onEndGame={handleEndGame}
       />
 
       <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4">
