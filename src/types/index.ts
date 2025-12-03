@@ -35,11 +35,15 @@ export type ClientMessage =
   | { type: 'vote'; vote: string }
   | { type: 'reveal' }
   | { type: 'newRound' }
-  | { type: 'updateSettings'; settings: Partial<GameSettings> };
+  | { type: 'updateSettings'; settings: Partial<GameSettings> }
+  | { type: 'leave' }
+  | { type: 'endGame' };
 
 export type ServerMessage =
   | { type: 'gameState'; state: GameState }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  | { type: 'playerLeft'; playerId: string; playerName: string }
+  | { type: 'gameEnded'; endedBy: string };
 
 export interface CreateGameLocationState {
   playerName: string;
