@@ -3,7 +3,7 @@
  * Displays cards that indicate whether players have voted and their votes when revealed.
  */
 
-import { CircleCheck, Eye, Vote } from 'lucide-react';
+import { CircleCheck, Eye } from 'lucide-react';
 import { memo } from 'react';
 import { cn } from '../../lib/utils';
 

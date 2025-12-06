@@ -7,7 +7,6 @@ import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
@@ -53,25 +52,6 @@ export default function CreateGame() {
     },
     [],
   );
-
-  const validateForm = useCallback((): boolean => {
-    if (!formData.playerName.trim()) {
-      toast.error('Please enter your name');
-      return false;
-    }
-
-    if (formData.playerName.length > 50) {
-      toast.error('Name cannot exceed 50 characters');
-      return false;
-    }
-
-    if (formData.gameName.length > 100) {
-      toast.error('Game name cannot exceed 100 characters');
-      return false;
-    }
-
-    return true;
-  }, [formData]);
 
   /**
    * Handles form submission.

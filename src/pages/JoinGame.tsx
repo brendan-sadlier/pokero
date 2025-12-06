@@ -5,7 +5,6 @@
 
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
