@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Dialog for sharing game invite links.
+ */
+
 import { UserPlus } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -9,28 +13,37 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import { useCallback } from 'react';
+import { memo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { generateShareUrl } from '../../lib/utils';
 
 type GameShareDialogProps = {
+  // Game identifier
   gameId: string;
 };
 
-export default function GameShareDialog({ gameId }: GameShareDialogProps) {
+/**
+ * Dialog for inviting players to a game.
+ *
+ * @example
+ * <GameShareDialog gameId={gameId} />
+ */
+function GameShareDialogComponent({ gameId }: GameShareDialogProps) {
+  const shareUrl = generateShareUrl(gameId);
+
+  /**
+   * Copies the game invite URL to clipboard.
+   */
   const handleCopyLink = useCallback(() => {
-    const normalizedGameId = gameId.toLowerCase();
-    const url = `${window.location.origin}/join?gameId=${normalizedGameId}`;
     navigator.clipboard
-      .writeText(url)
+      .writeText(shareUrl)
       .then(() => {
         toast.success('Game link copied to clipboard!');
       })
       .catch(() => {
         toast.error('Failed to copy link');
       });
-  }, [gameId]);
-
-  const normalizedGameId = gameId.toLowerCase();
+  }, [shareUrl]);
 
   return (
     <Dialog>
@@ -40,6 +53,7 @@ export default function GameShareDialog({ gameId }: GameShareDialogProps) {
           Invite Players
         </Button>
       </DialogTrigger>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Invite Players</DialogTitle>
@@ -48,9 +62,10 @@ export default function GameShareDialog({ gameId }: GameShareDialogProps) {
         <div className="flex gap-2">
           <Input
             type="text"
-            value={`${window.location.origin}/join?gameId=${normalizedGameId}`}
+            value={shareUrl}
             readOnly
             className="flex-1 font-mono"
+            aria-label="Game invite URL"
           />
         </div>
 
@@ -65,3 +80,8 @@ export default function GameShareDialog({ gameId }: GameShareDialogProps) {
     </Dialog>
   );
 }
+
+export const GameShareDialog = memo(GameShareDialogComponent);
+GameShareDialog.displayName = 'GameShareDialog';
+
+export default GameShareDialog;

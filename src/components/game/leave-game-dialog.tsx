@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Dialog for leaving a game.
+ * Allows players to leave the game or end it if they are the admin.
+ */
+
 import { Crown, DoorOpen } from 'lucide-react';
 import {
   AlertDialog,
@@ -11,14 +16,33 @@ import {
   AlertDialogTrigger,
 } from '../ui/alert-dialog';
 import { Button } from '../ui/button';
+import { memo } from 'react';
 
 type LeaveGameDialogProps = {
+  // Callback when the player chooses to leave the game
   onLeave: () => void;
+  // Callback when the admin chooses to end the game
   onEndGame?: () => void;
+  // Whether the current player is the game admin
   isAdmin: boolean;
 };
 
-export default function LeaveGameDialog({ onLeave, onEndGame, isAdmin }: LeaveGameDialogProps) {
+function LeaveGameDialogComponent({ onLeave, onEndGame, isAdmin }: LeaveGameDialogProps) {
+  const renderDialogDescription = () => {
+    if (isAdmin) {
+      return (
+        <>
+          You are the admin of this game. If you leave, admin privileges will be transferred to
+          another player. Are you sure you want to leave?
+        </>
+      );
+    } else {
+      return (
+        <>Are you sure you want to leave this game? You can region later using the same link.</>
+      );
+    }
+  };
+
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
@@ -34,18 +58,7 @@ export default function LeaveGameDialog({ onLeave, onEndGame, isAdmin }: LeaveGa
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Leaving so Soon?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {isAdmin ? (
-              <>
-                You are the admin of this game. If you leave, admin privileges will be transferred
-                to another player. Are you sure you want to leave?
-              </>
-            ) : (
-              <>
-                Are you sure you want to leave this game? You can region later using the same link.
-              </>
-            )}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{renderDialogDescription()}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className={isAdmin ? 'flex-col sm:flex-row gap-2' : ''}>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -69,3 +82,8 @@ export default function LeaveGameDialog({ onLeave, onEndGame, isAdmin }: LeaveGa
     </AlertDialog>
   );
 }
+
+export const LeaveGameDialog = memo(LeaveGameDialogComponent);
+LeaveGameDialog.displayName = 'LeaveGameDialog';
+
+export default LeaveGameDialog;
