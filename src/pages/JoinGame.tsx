@@ -1,4 +1,8 @@
-/* eslint-disable no-undef */
+/**
+ * @fileoverview Join game page component.
+ * Allows users to join existing Pokero game sessions.
+ */
+
 import { useCallback, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -7,63 +11,54 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/u
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import type { JoinGameFormData, JoinGameLocationState } from '../types';
+import { VALIDATION_CONFIG, type JoinGameFormData, type JoinGameLocationState } from '../types';
 import { toast } from 'sonner';
+import { normalizeGameId, validateJoinGameForm } from '../lib/utils';
+import { AnimatedBackground } from '../components/animated-background';
 
+/**
+ * Page for joining an existing game session.
+ */
 export default function JoinGame() {
   const navigate = useNavigate();
-
   const [searchParams] = useSearchParams();
 
+  // Pre-fill game ID from URL if provided
   const [formData, setFormData] = useState<JoinGameFormData>({
     playerName: '',
-    gameId: searchParams.get('gameId')?.toLowerCase() || '',
+    gameId: normalizeGameId(searchParams.get('gameId') || ''),
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Updates a form field value.
+   */
   const handleInputChange = useCallback((field: keyof JoinGameFormData, value: string) => {
-    const processedValue = field === 'gameId' ? value.toLowerCase() : value;
+    const processedValue = field === 'gameId' ? normalizeGameId(value) : value;
     setFormData((prev) => ({ ...prev, [field]: processedValue }));
   }, []);
 
-  const validateForm = useCallback((): boolean => {
-    if (!formData.playerName.trim()) {
-      toast.error('Please enter your name');
-      return false;
-    }
-
-    if (formData.playerName.length > 50) {
-      toast.error('Name cannot exceed 50 characters');
-      return false;
-    }
-
-    if (!formData.gameId.trim()) {
-      toast.error('Please enter a valid Game ID');
-      return false;
-    }
-
-    // Basic Game ID format check (alphanumeric, reasonable length)
-    const gameIdPattern = /^[a-z0-9]{5,15}$/;
-    if (!gameIdPattern.test(formData.gameId.trim())) {
-      toast.error('Invalid Game ID format');
-      return false;
-    }
-    return true;
-  }, [formData]);
-
+  /**
+   * Handles form submission.
+   */
   const handleJoin = useCallback(
+    // eslint-disable-next-line no-undef
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
       if (isSubmitting) return;
 
-      if (!validateForm()) return;
+      const validation = validateJoinGameForm(formData.playerName, formData.gameId);
+      if (!validation.isValid) {
+        toast.error(validation.error);
+        return;
+      }
 
       setIsSubmitting(true);
 
       try {
-        const normalizedGameId = formData.gameId.trim().toLowerCase();
+        const normalizedGameId = normalizeGameId(formData.gameId);
 
         const locationState: JoinGameLocationState = {
           playerName: formData.playerName.trim(),
@@ -79,7 +74,7 @@ export default function JoinGame() {
         setIsSubmitting(false);
       }
     },
-    [formData, isSubmitting, navigate, validateForm],
+    [formData, isSubmitting, navigate],
   );
 
   return (
@@ -102,6 +97,7 @@ export default function JoinGame() {
               Join a Game
             </CardTitle>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleJoin}>
               <FieldGroup>
@@ -115,14 +111,14 @@ export default function JoinGame() {
                     onChange={(e) => handleInputChange('playerName', e.target.value)}
                     placeholder="Enter your Name"
                     required
-                    maxLength={50}
+                    maxLength={VALIDATION_CONFIG.MAX_NAME_LENGTH}
                     disabled={isSubmitting}
+                    autoComplete="name"
                   />
                 </Field>
+
                 <Field>
-                  <div className="flex items-center">
-                    <FieldLabel htmlFor="gameId">Game ID</FieldLabel>
-                  </div>
+                  <FieldLabel htmlFor="gameId">Game ID</FieldLabel>
                   <Input
                     id="gameId"
                     name="gameId"
@@ -132,11 +128,13 @@ export default function JoinGame() {
                     placeholder="Enter Game ID"
                     required
                     disabled={isSubmitting}
+                    autoComplete="off"
                   />
                   <FieldDescription className="text-xs text-muted-foreground">
                     Game IDs are case-insensitive
                   </FieldDescription>
                 </Field>
+
                 <Field>
                   <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (
@@ -156,30 +154,7 @@ export default function JoinGame() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/10 dark:bg-primary/20 rounded-full"
-          animate={{ scale: [1, 1.1, 1], rotate: [0, 90, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-secondary/10 dark:bg-secondary/20 rounded-full"
-          animate={{ scale: [1, 1.2, 1], rotate: [0, -90, 0] }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-12 h-12 bg-primary/20 dark:bg-primary/30 rounded-full"
-          animate={{ y: [0, -20, 0], x: [0, 20, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-8 h-8 bg-secondary/20 dark:bg-secondary/30 rounded-full"
-          animate={{ y: [0, 30, 0], x: [0, -30, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
+      <AnimatedBackground />
     </div>
   );
 }

@@ -1,4 +1,8 @@
-/* eslint-disable no-undef */
+/**
+ * @fileoverview Create game page component.
+ * Allows users to create new Pokero game sessions.
+ */
+
 import { useCallback, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
@@ -7,7 +11,7 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '../components/ui/field';
 import { Input } from '../components/ui/input';
-import { generateGameId } from '../lib/utils';
+import { generateGameId, validateCreateGameForm } from '../lib/utils';
 import {
   Accordion,
   AccordionContent,
@@ -16,22 +20,35 @@ import {
 } from '../components/ui/accordion';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
-import type { CreateGameFormData, CreateGameLocationState } from '../types';
+import {
+  DEFAULT_GAME_SETTINGS,
+  VALIDATION_CONFIG,
+  type CreateGameFormData,
+  type CreateGameLocationState,
+} from '../types';
 import { toast } from 'sonner';
+import AnimatedBackground from '../components/animated-background';
 
+/**
+ * Page for creating a new game session.
+ */
 export default function CreateGame() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState<CreateGameFormData>({
     playerName: '',
     gameName: '',
-    allowPlayersToReveal: true,
-    adminCanSpectate: false,
+    allowPlayersToReveal: DEFAULT_GAME_SETTINGS.allowPlayersToReveal,
+    adminCanSpectate: DEFAULT_GAME_SETTINGS.adminCanSpectate,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  /**
+   * Updates a form field value.
+   */
   const handleInputChange = useCallback(
-    (field: keyof CreateGameFormData, value: string | boolean) => {
+    <K extends keyof CreateGameFormData>(field: K, value: CreateGameFormData[K]) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
     },
     [],
@@ -56,23 +73,32 @@ export default function CreateGame() {
     return true;
   }, [formData]);
 
+  /**
+   * Handles form submission.
+   */
   const handleCreate = useCallback(
+    // eslint-disable-next-line no-undef
     (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
 
       if (isSubmitting) return;
 
-      if (!validateForm()) return;
+      const validation = validateCreateGameForm(formData.playerName, formData.gameName);
+
+      if (!validation.isValid) {
+        toast.error(validation.error);
+        return;
+      }
 
       setIsSubmitting(true);
 
       try {
-        const gameId = generateGameId().toLowerCase();
+        const gameId = generateGameId();
         const locationState: CreateGameLocationState = {
           playerName: formData.playerName.trim(),
           isAdmin: true,
           settings: {
-            gameName: formData.gameName.trim() || 'Planning Poker',
+            gameName: formData.gameName.trim() || DEFAULT_GAME_SETTINGS.gameName,
             allowPlayersToReveal: formData.allowPlayersToReveal,
             adminCanSpectate: formData.adminCanSpectate,
           },
@@ -88,7 +114,7 @@ export default function CreateGame() {
         setIsSubmitting(false);
       }
     },
-    [formData, isSubmitting, navigate, validateForm],
+    [formData, isSubmitting, navigate],
   );
 
   return (
@@ -111,6 +137,7 @@ export default function CreateGame() {
               Create a Game
             </CardTitle>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleCreate}>
               <FieldGroup>
@@ -124,27 +151,30 @@ export default function CreateGame() {
                     onChange={(e) => handleInputChange('playerName', e.target.value)}
                     placeholder="Enter your Name"
                     required
-                    maxLength={50}
+                    maxLength={VALIDATION_CONFIG.MAX_NAME_LENGTH}
                     disabled={isSubmitting}
+                    autoComplete="name"
                   />
                 </Field>
+
                 <Field>
-                  <div className="flex items-center">
-                    <FieldLabel htmlFor="gameName">Game Name</FieldLabel>
-                  </div>
+                  <FieldLabel htmlFor="gameName">Game Name</FieldLabel>
                   <Input
                     id="gameName"
                     name="gameName"
                     type="text"
                     value={formData.gameName}
                     onChange={(e) => handleInputChange('gameName', e.target.value)}
-                    placeholder="Leave blank for 'Planning Poker'"
-                    maxLength={100}
+                    placeholder={`Leave blank for '${DEFAULT_GAME_SETTINGS.gameName}'`}
+                    maxLength={VALIDATION_CONFIG.MAX_GAME_NAME_LENGTH}
                     disabled={isSubmitting}
+                    autoComplete="off"
                   />
                 </Field>
+
+                {/* Advanced Game Settings Accordion */}
                 <Accordion type="single" collapsible className="w-full px-2 ">
-                  <AccordionItem value="item-1">
+                  <AccordionItem value="settings">
                     <AccordionTrigger>Game Settings</AccordionTrigger>
                     <AccordionContent className="flex flex-col gap-2">
                       <Field>
@@ -160,6 +190,7 @@ export default function CreateGame() {
                           <Label htmlFor="playerReveal">Allow All Players to Reveal Cards</Label>
                         </div>
                       </Field>
+
                       <Field>
                         <div className="flex items-center space-x-2">
                           <Switch
@@ -176,8 +207,9 @@ export default function CreateGame() {
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
+
                 <Field>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button type="submit" disabled={isSubmitting} className="w-full">
                     {isSubmitting ? (
                       <>
                         <LoaderCircle className="animate-spin" /> Creating...
@@ -196,29 +228,7 @@ export default function CreateGame() {
         </Card>
       </div>
 
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/10 dark:bg-primary/20 rounded-full"
-          animate={{ scale: [1, 1.1, 1], rotate: [0, 90, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-secondary/10 dark:bg-secondary/20 rounded-full"
-          animate={{ scale: [1, 1.2, 1], rotate: [0, -90, 0] }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-12 h-12 bg-primary/20 dark:bg-primary/30 rounded-full"
-          animate={{ y: [0, -20, 0], x: [0, 20, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute bottom-1/4 right-1/4 w-8 h-8 bg-secondary/20 dark:bg-secondary/30 rounded-full"
-          animate={{ y: [0, 30, 0], x: [0, -30, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
+      <AnimatedBackground />
     </div>
   );
 }

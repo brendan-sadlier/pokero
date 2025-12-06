@@ -1,12 +1,12 @@
-/* eslint-disable react-hooks/set-state-in-effect */
+/**
+ * @fileoverview Main game page component.
+ * Handles real-time game state, voting, and results display.
+ */
+
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { calculateRoundStats } from '../lib/utils';
+import { calculateRoundStats, normalizeGameId } from '../lib/utils';
 import { usePartyKit } from '../lib/usePartyKit';
-import VotingCards from '../components/game/voting-cards';
-import RoundStats from '../components/game/round-stats';
-import GameHeader from '../components/game/game-header';
-import VoteStatusCards from '../components/game/vote-status-card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import {
@@ -16,22 +16,110 @@ import {
   savePlayerSession,
   updateSessionSettings,
 } from '../lib/sessionManager';
-import type {
-  ConnectionState,
-  CreateGameLocationState,
-  GameSettings,
-  JoinGameLocationState,
+import {
+  isCreateGameState,
+  type ConnectionState,
+  type GameLocationState,
+  type GameSettings,
 } from '../types';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { GameHeader, RoundStats, VoteStatusCards, VotingCards } from '../components/game';
 
-type LocationState = CreateGameLocationState | JoinGameLocationState;
+/**
+ * Hook to manage player session and identity.
+ */
+function usePlayerSession(gameId: string | null) {
+  const existingSession = useMemo(() => (gameId ? getPlayerSession(gameId) : null), [gameId]);
 
+  const [playerId] = useState<string>(() => existingSession?.playerId || generatePlayerId());
+
+  return { existingSession, playerId };
+}
+
+/**
+ * Hook to extract player info from location state or session.
+ */
+function usePlayerInfo(
+  locationState: GameLocationState | null,
+  existingSession: ReturnType<typeof getPlayerSession>,
+) {
+  const playerName = useMemo(
+    () => existingSession?.playerName || locationState?.playerName || 'Guest',
+    [existingSession, locationState],
+  );
+
+  const isAdmin = useMemo(
+    () => existingSession?.isAdmin ?? locationState?.isAdmin ?? false,
+    [existingSession, locationState],
+  );
+
+  return { playerName, isAdmin };
+}
+
+interface LoadingStateProps {
+  message: string;
+  retryCount?: number;
+}
+
+function LoadingState({ message, retryCount }: LoadingStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
+      <p className="text-muted-foreground">
+        {message}
+        {retryCount !== undefined && retryCount > 0 && ` (attempt ${retryCount + 1})`}
+      </p>
+    </div>
+  );
+}
+
+interface ErrorStateProps {
+  message: string;
+  onRetry: () => void;
+  onGoHome: () => void;
+}
+
+function ErrorState({ message, onRetry, onGoHome }: ErrorStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+      <div className="max-w-md w-full space-y-4 text-center">
+        <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+        <h2 className="text-xl font-semibold">Connection Error</h2>
+        <p className="text-muted-foreground">{message}</p>
+        <div className="flex gap-2 justify-center">
+          <Button onClick={onRetry} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Retry
+          </Button>
+          <Button onClick={onGoHome}>Back to Home</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface SpectatorViewProps {
+  message?: string;
+}
+
+function SpectatorView({ message = 'You are observing this round' }: SpectatorViewProps) {
+  return (
+    <div className="text-center p-6">
+      <h2 className="text-xl font-semibold mb-2">👁️ Spectating</h2>
+      <p className="text-muted-foreground">{message}</p>
+    </div>
+  );
+}
+
+/**
+ * Main game page that manages the entire game session.
+ */
 export default function Game() {
   const { gameId: rawGameId } = useParams<{ gameId: string }>();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const gameId = useMemo(() => rawGameId?.toLowerCase() || null, [rawGameId]);
+  const gameId = useMemo(() => (rawGameId ? normalizeGameId(rawGameId) : null), [rawGameId]);
 
   useEffect(() => {
     if (rawGameId && rawGameId !== gameId) {
@@ -39,19 +127,17 @@ export default function Game() {
     }
   }, [rawGameId, gameId]);
 
-  const existingSession = useMemo(() => (gameId ? getPlayerSession(gameId) : null), [gameId]);
+  const { existingSession, playerId } = usePlayerSession(gameId);
+  const locationState = location.state as GameLocationState | null;
+  const { playerName, isAdmin } = usePlayerInfo(locationState, existingSession);
 
-  const [playerId] = useState<string>(existingSession?.playerId || generatePlayerId());
   const [hasJoined, setHasJoined] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const [settingsApplied, setSettingsApplied] = useState(false);
 
+  // Connection state handler
   const handleConnectionChange = useCallback((state: ConnectionState) => {
-    if (state == 'CONNECTED') {
-      setIsReconnecting(false);
-    } else if (state == 'RECONNECTING') {
-      setIsReconnecting(true);
-    }
+    setIsReconnecting(state === 'RECONNECTING');
   }, []);
 
   const handleGameEnded = useCallback(
@@ -74,16 +160,6 @@ export default function Game() {
     toast.info(`${playerName} has left the game.`);
   }, []);
 
-  const { gameState, connected, error, sendMessage, retryCount, reconnect } = usePartyKit(
-    gameId || null,
-    {
-      playerId,
-      onConnectionChange: handleConnectionChange,
-      onGameEnded: handleGameEnded,
-      onPlayerLeft: handlePlayerLeft,
-    },
-  );
-
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (gameId) {
@@ -98,18 +174,15 @@ export default function Game() {
     };
   }, [gameId]);
 
-  const state = location.state as LocationState | null;
+  // PartyKit connection
+  const { gameState, connected, error, sendMessage, retryCount, reconnect } = usePartyKit(gameId, {
+    playerId,
+    onConnectionChange: handleConnectionChange,
+    onGameEnded: handleGameEnded,
+    onPlayerLeft: handlePlayerLeft,
+  });
 
-  const playerName = useMemo(
-    () => existingSession?.playerName || state?.playerName || 'Guest',
-    [existingSession, state],
-  );
-
-  const isAdmin = useMemo(
-    () => existingSession?.isAdmin ?? state?.isAdmin ?? false,
-    [existingSession, state],
-  );
-
+  // Redirect if no valid player name
   useEffect(() => {
     if (!playerName || playerName === 'Guest') {
       toast.error('Please enter your name to join the game.');
@@ -117,6 +190,7 @@ export default function Game() {
     }
   }, [playerName, navigate]);
 
+  // Join game when connected
   useEffect(() => {
     if (!connected || hasJoined || !gameId || !playerName) return;
 
@@ -127,13 +201,15 @@ export default function Game() {
     sendMessage({
       type: 'join',
       name: playerName,
-      isAdmin: isAdmin,
+      isAdmin,
     });
 
-    const initialSettings =
-      (state as CreateGameLocationState)?.settings || existingSession?.settings;
-    savePlayerSession(gameId, playerId, playerName, isAdmin, initialSettings);
+    const initialSettings = isCreateGameState(locationState)
+      ? locationState.settings
+      : existingSession?.settings;
 
+    savePlayerSession(gameId, playerId, playerName, isAdmin, initialSettings);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasJoined(true);
     setIsReconnecting(false);
   }, [
@@ -145,18 +221,17 @@ export default function Game() {
     isAdmin,
     isReconnecting,
     sendMessage,
-    state,
+    locationState,
     existingSession,
   ]);
 
+  // Apply initial settings for admin
   useEffect(() => {
     if (!gameState || !hasJoined || !isAdmin || settingsApplied) return;
 
-    const createGameState = state as CreateGameLocationState | null;
-    const storedSettings = existingSession?.settings;
-    const locationSettings = createGameState?.settings;
-
-    const settingsToApply = storedSettings || locationSettings;
+    const settingsToApply =
+      existingSession?.settings ||
+      (isCreateGameState(locationState) ? locationState.settings : undefined);
 
     if (settingsToApply) {
       const serverSettings = gameState.settings;
@@ -166,14 +241,25 @@ export default function Game() {
         serverSettings.adminCanSpectate !== settingsToApply.adminCanSpectate;
 
       if (settingsDiffer) {
-        console.log('Applying game settings for admin:', settingsToApply);
         sendMessage({ type: 'updateSettings', settings: settingsToApply });
-        updateSessionSettings(gameId!, settingsToApply);
+        if (gameId) {
+          updateSessionSettings(gameId, settingsToApply);
+        }
       }
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSettingsApplied(true);
     }
-  }, [gameState, hasJoined, isAdmin, settingsApplied, state, existingSession, sendMessage, gameId]);
+  }, [
+    gameState,
+    hasJoined,
+    isAdmin,
+    settingsApplied,
+    locationState,
+    existingSession,
+    sendMessage,
+    gameId,
+  ]);
 
   useEffect(() => {
     if (gameState?.settings && gameId) {
@@ -181,6 +267,7 @@ export default function Game() {
     }
   }, [gameState?.settings, gameId]);
 
+  // Derived state
   const currentPlayer = useMemo(
     () => (playerId && gameState ? gameState.players[playerId] : null),
     [gameState, playerId],
@@ -210,6 +297,8 @@ export default function Game() {
     () => (gameState?.votesRevealed ? calculateRoundStats(gameState) : null),
     [gameState],
   );
+
+  const votingPlayersCount = useMemo(() => players.filter((p) => !p.isSpectator).length, [players]);
 
   // Event Handlers
   const handleVote = useCallback(
@@ -255,6 +344,8 @@ export default function Game() {
     [isPlayerAdmin, sendMessage, gameId, gameState],
   );
 
+  const handleGoHome = useCallback(() => navigate('/'), [navigate]);
+
   const handleLeaveGame = useCallback(() => {
     if (!gameId) return;
 
@@ -273,47 +364,17 @@ export default function Game() {
     navigate('/');
   }, [gameId, isPlayerAdmin, sendMessage, navigate]);
 
-  // Loading State
+  // Render states
   if (!connected && !error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
-        <p className="text-muted-foreground">
-          Connecting to game
-          {retryCount > 0 && ` (attempt ${retryCount + 1})`}...
-        </p>
-      </div>
-    );
+    return <LoadingState message="Connecting to game" retryCount={retryCount} />;
   }
 
-  // Error State
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="max-w-md w-full space-y-4 text-center">
-          <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
-          <h2 className="text-xl font-semibold">Connection Error</h2>
-          <p className="text-muted-foreground">{error.userMessage}</p>
-          <div className="flex gap-2 justify-center">
-            <Button onClick={reconnect} variant="outline">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Retry
-            </Button>
-            <Button onClick={() => navigate('/')}>Back to Home</Button>
-          </div>
-        </div>
-      </div>
-    );
+    return <ErrorState message={error.userMessage} onRetry={reconnect} onGoHome={handleGoHome} />;
   }
 
-  // Waiting for Game State
   if (!gameState || !currentPlayer) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
-        <p className="text-muted-foreground">Loading game...</p>
-      </div>
-    );
+    return <LoadingState message="Loading game..." />;
   }
 
   return (
@@ -337,13 +398,12 @@ export default function Game() {
 
           {!gameState.votesRevealed && (
             <>
-              {allVoted &&
-                canReveal &&
-                Object.values(gameState.players).filter((p) => !p.isSpectator).length > 1 && (
-                  <Button className="mb-4" onClick={handleReveal}>
-                    Reveal Votes
-                  </Button>
-                )}
+              {allVoted && canReveal && votingPlayersCount > 1 && (
+                <Button className="mb-4" onClick={handleReveal}>
+                  Reveal Votes
+                </Button>
+              )}
+
               {!isSpectator ? (
                 <VotingCards
                   onVote={handleVote}
@@ -351,10 +411,7 @@ export default function Game() {
                   disabled={gameState.votesRevealed}
                 />
               ) : (
-                <div className="text-center p-6">
-                  <h2 className="text-xl font-semibold mb-2">👁️ Spectating</h2>
-                  <p className="text-muted-foreground">You are observing this round</p>
-                </div>
+                <SpectatorView />
               )}
               {allVoted && !canReveal && (
                 <div className="waiting-message text-center p-6">
