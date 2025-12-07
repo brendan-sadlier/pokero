@@ -5,7 +5,7 @@
 
 import { memo, useCallback, useMemo } from 'react';
 import { cn } from '../../lib/utils';
-import { CARD_VALUES, getCardValues, VotingType, type CardValue } from '../../types';
+import { getCardValues, VotingType, type CardValue } from '../../types';
 
 interface VotingCardsProps {
   // Callback when a vote is selected
