@@ -4,7 +4,12 @@
  */
 
 import { useState, useCallback, useEffect, memo } from 'react';
-import { VALIDATION_CONFIG, type GameSettings as GameSettingsType } from '../../types';
+import {
+  VALIDATION_CONFIG,
+  VOTING_TYPE_LABELS,
+  VotingType,
+  type GameSettings as GameSettingsType,
+} from '../../types';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +25,7 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface GameSettingsProps {
   // Current game settings
@@ -40,12 +46,14 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
   const [gameName, setGameName] = useState(settings.gameName);
   const [allowPlayersToReveal, setAllowPlayersToReveal] = useState(settings.allowPlayersToReveal);
   const [adminCanSpectate, setAdminCanSpectate] = useState(settings.adminCanSpectate);
+  const [votingType, setVotingType] = useState<VotingType>(settings.votingType);
 
   // Sync local state with settings prop when it changes
   useEffect(() => {
     setGameName(settings.gameName);
     setAllowPlayersToReveal(settings.allowPlayersToReveal);
     setAdminCanSpectate(settings.adminCanSpectate);
+    setVotingType(settings.votingType);
   }, [settings]);
 
   /**
@@ -78,6 +86,10 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
       updates.adminCanSpectate = adminCanSpectate;
     }
 
+    if (votingType !== settings.votingType) {
+      updates.votingType = votingType;
+    }
+
     if (Object.keys(updates).length > 0) {
       onUpdate(updates);
       toast.success('Settings updated successfully');
@@ -85,7 +97,7 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
     } else {
       toast.info('No changes to save');
     }
-  }, [gameName, allowPlayersToReveal, adminCanSpectate, settings, onUpdate]);
+  }, [gameName, allowPlayersToReveal, adminCanSpectate, votingType, settings, onUpdate]);
 
   /**
    * Resets local state and closes dialog.
@@ -95,6 +107,7 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
     setGameName(settings.gameName);
     setAllowPlayersToReveal(settings.allowPlayersToReveal);
     setAdminCanSpectate(settings.adminCanSpectate);
+    setVotingType(settings.votingType);
     setIsOpen(false);
   }, [settings]);
 
@@ -131,8 +144,31 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
             />
           </div>
 
+          {/* Voting Type Setting */}
+          <div className="grid gap-3">
+            <Label htmlFor="votingType">Voting Type</Label>
+            <Select
+              value={votingType}
+              onValueChange={(value) => setVotingType(value as VotingType)}
+            >
+              <SelectTrigger id="votingType" className="w-full">
+                <SelectValue placeholder="Select voting type" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(VOTING_TYPE_LABELS).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Changing voting type will reset all current votes
+            </p>
+          </div>
+
           {/* Allow Players to Reveal Cards Setting */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mt-2">
             <Switch
               id="playerReveal"
               checked={allowPlayersToReveal}
@@ -153,10 +189,10 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="outline" onClick={handleCancel} className="hover:cursor-pointer">
             Cancel
           </Button>
-          <Button type="button" onClick={handleSave}>
+          <Button type="button" onClick={handleSave} className="hover:cursor-pointer">
             Save Changes
           </Button>
         </DialogFooter>
