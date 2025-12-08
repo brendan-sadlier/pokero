@@ -89,8 +89,6 @@ function WinningVoteComponent({ distribution, hasVotes }: WinningVoteProps) {
       ? winners.slice(0, 3).join(', ')
       : winners[0] || '—';
 
-  const label = !hasVotes ? 'Winner' : isDraw ? 'Draw' : 'Winner';
-
   return (
     <div className="flex items-center gap-4 group">
       {/* Icon Container */}
