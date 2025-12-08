@@ -6,7 +6,7 @@
 
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { VALIDATION_CONFIG, type GameState, type RoundStats } from '../types';
+import { getCardValues, VALIDATION_CONFIG, type GameState, type RoundStats } from '../types';
 
 /**
  * Combines class names using clsx and tailwind-merge.
@@ -57,11 +57,44 @@ export function calculateRoundStats(gameState: GameState): RoundStats {
       ? numericVotes.reduce((sum, val) => sum + val, 0) / numericVotes.length
       : null;
 
+  let agreeability = null;
+  const totalVotes = votes.length;
+  if (totalVotes !== 0) {
+    const choices = getCardValues(gameState.settings.votingType);
+    const indexMap = new Map<string, number>();
+    choices.forEach((value, idx) => indexMap.set(value, idx));
+
+    let voteCount = 0;
+    let weightedIdxSum = 0;
+
+    for (const [vote, count] of Object.entries(distribution)) {
+      const idx = indexMap.get(vote);
+      if (idx == null) continue;
+      voteCount += count;
+      weightedIdxSum += idx * count;
+    }
+
+    const meanIndex = weightedIdxSum / voteCount;
+
+    let weightedDistanceSum = 0;
+    for (const [vote, count] of Object.entries(distribution)) {
+      const idx = indexMap.get(vote);
+      if (idx == null) continue;
+      weightedDistanceSum += Math.abs(idx - meanIndex) * count;
+    }
+
+    const avgDistance = weightedDistanceSum / voteCount;
+    const maxDistance = Math.max(choices.length - 1, 1);
+    const normalized = avgDistance / maxDistance;
+    agreeability = Math.max(0, Math.min(1, 1 - normalized)) * 100;
+  }
+
   return {
     average,
     distribution,
     numericVotes,
     nonNumericVotes,
+    agreeability,
   };
 }
 

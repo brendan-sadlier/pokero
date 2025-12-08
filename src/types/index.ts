@@ -139,6 +139,8 @@ export interface RoundStats {
   numericVotes: number[];
   // List of non-numeric votes
   nonNumericVotes: string[];
+  // Agreeability percentage (0-100); null if no votes
+  agreeability?: number | null;
 }
 
 /**
