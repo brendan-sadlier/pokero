@@ -14,10 +14,13 @@ interface Player {
   hasVoted: boolean;
 }
 
+type VotingType = 'fibonacci' | 't-shirt' | 'powers-of-2';
+
 interface GameSettings {
   gameName: string;
   allowPlayersToReveal: boolean;
   adminCanSpectate: boolean;
+  votingType: VotingType;
 }
 
 interface GameState {
@@ -42,7 +45,10 @@ const DEFAULT_SETTINGS: GameSettings = {
   gameName: 'Pokero',
   allowPlayersToReveal: true,
   adminCanSpectate: true,
+  votingType: 'fibonacci',
 };
+
+const VALID_VOTING_TYPES: VotingType[] = ['fibonacci', 't-shirt', 'powers-of-2'];
 
 const MAX_NAME_LENGTH = 50;
 const MAX_GAME_NAME_LENGTH = 100;
@@ -66,6 +72,13 @@ function sanitizeGameName(name: string): string {
  */
 function isValidVote(vote: unknown): vote is string {
   return typeof vote === 'string' && vote.length > 0 && vote.length <= 10;
+}
+
+/*
+ * Validates that a voting type is valid.
+ */
+function isValidVotingType(type: unknown): type is VotingType {
+  return typeof type === 'string' && VALID_VOTING_TYPES.includes(type as VotingType);
 }
 
 /**
@@ -101,30 +114,6 @@ export default class PokeroServicer implements Party.Server {
 
     try {
       parsed = JSON.parse(message);
-
-      // switch (msg.type) {
-      //   case 'join':
-      //     this.handleJoin(sender.id, msg.name, msg.isAdmin);
-      //     break;
-      //   case 'vote':
-      //     this.handleVote(sender.id, msg.vote);
-      //     break;
-      //   case 'reveal':
-      //     this.handleReveal(sender.id);
-      //     break;
-      //   case 'newRound':
-      //     this.handleNewRound(sender.id);
-      //     break;
-      //   case 'updateSettings':
-      //     this.handleUpdateSettings(sender.id, msg.settings);
-      //     break;
-      //   case 'leave':
-      //     this.handleLeave(sender.id);
-      //     break;
-      //   case 'endGame':
-      //     this.handleEndGame(sender.id);
-      //     break;
-      // }
     } catch (error) {
       console.error('Invalid JSON received:', error);
       this.sendError(sender, 'Invalid message format.');
@@ -187,19 +176,6 @@ export default class PokeroServicer implements Party.Server {
     }
 
     if (!this.gameState) {
-      // // First player to join creates the game
-      // this.gameState = {
-      //   gameId: this.room.id,
-      //   settings: {
-      //     gameName: 'Pokero',
-      //     allowPlayersToReveal: true,
-      //     adminCanSpectate: true,
-      //   },
-      //   players: {},
-      //   roundActive: true,
-      //   votesRevealed: false,
-      //   adminId: playerId,
-      // };
       this.gameState = this.createInitialGameState(playerId);
       isAdmin = true;
     }
@@ -306,6 +282,17 @@ export default class PokeroServicer implements Party.Server {
           admin.hasVoted = false;
         }
       }
+    }
+
+    if (settings.votingType !== undefined && isValidVotingType(settings.votingType)) {
+      this.gameState.settings.votingType = settings.votingType;
+
+      // Reset votes for all players when voting type changes
+      for (const p of Object.values(this.gameState.players)) {
+        p.vote = null;
+        p.hasVoted = false;
+      }
+      this.gameState.votesRevealed = false;
     }
 
     console.log('Game settings updated:', this.gameState.settings);

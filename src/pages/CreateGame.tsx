@@ -22,11 +22,20 @@ import { Label } from '../components/ui/label';
 import {
   DEFAULT_GAME_SETTINGS,
   VALIDATION_CONFIG,
+  VOTING_TYPE_LABELS,
+  VotingType,
   type CreateGameFormData,
   type CreateGameLocationState,
 } from '../types';
 import { toast } from 'sonner';
 import AnimatedBackground from '../components/animated-background';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 /**
  * Page for creating a new game session.
@@ -39,6 +48,7 @@ export default function CreateGame() {
     gameName: '',
     allowPlayersToReveal: DEFAULT_GAME_SETTINGS.allowPlayersToReveal,
     adminCanSpectate: DEFAULT_GAME_SETTINGS.adminCanSpectate,
+    votingType: DEFAULT_GAME_SETTINGS.votingType,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,6 +91,7 @@ export default function CreateGame() {
             gameName: formData.gameName.trim() || DEFAULT_GAME_SETTINGS.gameName,
             allowPlayersToReveal: formData.allowPlayersToReveal,
             adminCanSpectate: formData.adminCanSpectate,
+            votingType: formData.votingType,
           },
         };
 
@@ -150,6 +161,27 @@ export default function CreateGame() {
                     disabled={isSubmitting}
                     autoComplete="off"
                   />
+                </Field>
+
+                {/* Voting Type Selection */}
+                <Field>
+                  <FieldLabel htmlFor="votingType">Voting Type</FieldLabel>
+                  <Select
+                    value={formData.votingType}
+                    onValueChange={(value) => handleInputChange('votingType', value as VotingType)}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger id="votingType">
+                      <SelectValue placeholder="Select voting type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(VOTING_TYPE_LABELS).map(([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </Field>
 
                 {/* Advanced Game Settings Accordion */}

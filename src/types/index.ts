@@ -32,6 +32,60 @@ export function canPlayerVote(player: Player): boolean {
 }
 
 /**
+ * Available voting types for the game.
+ */
+export const VotingType = {
+  FIBONACCI: 'fibonacci',
+  T_SHIRT: 't-shirt',
+  POWERS_OF_2: 'powers-of-2',
+} as const;
+
+export type VotingType = (typeof VotingType)[keyof typeof VotingType];
+
+/**
+ * Display names for voting types.
+ */
+export const VOTING_TYPE_LABELS: Record<VotingType, string> = {
+  [VotingType.FIBONACCI]: 'Fibonacci',
+  [VotingType.T_SHIRT]: 'T-Shirt Sizing',
+  [VotingType.POWERS_OF_2]: 'Powers of 2',
+} as const;
+
+/**
+ * Card values for each voting type.
+ */
+export const CARD_VALUES_BY_TYPE: Record<VotingType, readonly string[]> = {
+  [VotingType.FIBONACCI]: ['0', '1', '2', '3', '5', '8', '13', '21', '34', '?'],
+  [VotingType.T_SHIRT]: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?'],
+  [VotingType.POWERS_OF_2]: ['0', '1', '2', '4', '8', '16', '32', '64', '?'],
+} as const;
+
+/**
+ * Default card values (Fibonacci) for backward compatibility.
+ */
+export const CARD_VALUES = CARD_VALUES_BY_TYPE[VotingType.FIBONACCI];
+
+export type CardValue = string;
+
+/**
+ * Check if a value is a valid card value for a given voting type
+ */
+export function isValidCardValue(
+  value: string,
+  votingType: VotingType = VotingType.FIBONACCI,
+): boolean {
+  const validValues = CARD_VALUES_BY_TYPE[votingType];
+  return validValues.includes(value);
+}
+
+/**
+ * Get card values for a voting type
+ */
+export function getCardValues(votingType: VotingType): readonly string[] {
+  return CARD_VALUES_BY_TYPE[votingType];
+}
+
+/**
  * Configuration settings for a Pokero game.
  */
 export interface GameSettings {
@@ -41,6 +95,8 @@ export interface GameSettings {
   allowPlayersToReveal: boolean;
   // Whether the admin is in spectator mode
   adminCanSpectate: boolean;
+  // Type of voting to use
+  votingType: VotingType;
 }
 
 /**
@@ -50,6 +106,7 @@ export const DEFAULT_GAME_SETTINGS: Readonly<GameSettings> = {
   gameName: 'Planning Poker',
   allowPlayersToReveal: true,
   adminCanSpectate: false,
+  votingType: VotingType.FIBONACCI,
 } as const;
 
 /**
@@ -276,20 +333,6 @@ export function createGameError(code: ErrorCode, message: string, userMessage: s
 }
 
 /**
- * Available card values for voting.
- */
-export const CARD_VALUES = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '?'] as const;
-
-export type CardValue = (typeof CARD_VALUES)[number];
-
-/**
- * Check if a value is a valid card value
- */
-export function isValidCardValue(value: string): value is CardValue {
-  return (CARD_VALUES as readonly string[]).includes(value);
-}
-
-/**
  * Configuration for WebSocket reconnection behavior.
  */
 export const RECONNECTION_CONFIG = {
@@ -337,6 +380,7 @@ export interface CreateGameFormData {
   gameName: string;
   allowPlayersToReveal: boolean;
   adminCanSpectate: boolean;
+  votingType: VotingType;
 }
 
 /**

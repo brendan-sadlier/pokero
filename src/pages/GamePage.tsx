@@ -238,7 +238,8 @@ export default function Game() {
       const settingsDiffer =
         serverSettings.gameName !== settingsToApply.gameName ||
         serverSettings.allowPlayersToReveal !== settingsToApply.allowPlayersToReveal ||
-        serverSettings.adminCanSpectate !== settingsToApply.adminCanSpectate;
+        serverSettings.adminCanSpectate !== settingsToApply.adminCanSpectate ||
+        serverSettings.votingType !== settingsToApply.votingType;
 
       if (settingsDiffer) {
         sendMessage({ type: 'updateSettings', settings: settingsToApply });
@@ -409,6 +410,7 @@ export default function Game() {
                   onVote={handleVote}
                   selectedVote={currentPlayer.vote}
                   disabled={gameState.votesRevealed}
+                  votingType={gameState.settings.votingType}
                 />
               ) : (
                 <SpectatorView />

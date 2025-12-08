@@ -3,9 +3,9 @@
  * Displays clickable cards for each available voting option.
  */
 
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import { cn } from '../../lib/utils';
-import { CARD_VALUES, type CardValue } from '../../types';
+import { getCardValues, VotingType, type CardValue } from '../../types';
 
 interface VotingCardsProps {
   // Callback when a vote is selected
@@ -14,6 +14,8 @@ interface VotingCardsProps {
   selectedVote: string | null;
   // Whether voting is disabled
   disabled: boolean;
+  // Voting type to determine card values
+  votingType?: VotingType;
 }
 
 interface VotingCardProps {
@@ -68,7 +70,14 @@ VotingCard.displayName = 'VotingCard';
  *   disabled={votesRevealed}
  * />
  */
-function VotingCardComponent({ onVote, selectedVote, disabled }: VotingCardsProps) {
+function VotingCardComponent({
+  onVote,
+  selectedVote,
+  disabled,
+  votingType = VotingType.FIBONACCI,
+}: VotingCardsProps) {
+  const cardValues = useMemo(() => getCardValues(votingType), [votingType]);
+
   const handleCardClick = useCallback(
     (value: CardValue) => {
       if (!disabled) {
@@ -88,7 +97,7 @@ function VotingCardComponent({ onVote, selectedVote, disabled }: VotingCardsProp
           role="radiogroup"
           aria-label="Vote selection"
         >
-          {CARD_VALUES.map((value) => (
+          {cardValues.map((value) => (
             <VotingCard
               key={value}
               value={value}
