@@ -1,3 +1,8 @@
+/**
+ * @fileoverview PartyKit server implementation for Pokero.
+ * Handles real-time game state management and WebSocket communication.
+ */
+
 import type * as Party from 'partykit/server';
 
 interface Player {
@@ -9,10 +14,13 @@ interface Player {
   hasVoted: boolean;
 }
 
+type VotingType = 'fibonacci' | 't-shirt' | 'powers-of-2';
+
 interface GameSettings {
   gameName: string;
   allowPlayersToReveal: boolean;
   adminCanSpectate: boolean;
+  votingType: VotingType;
 }
 
 interface GameState {
@@ -24,13 +32,67 @@ interface GameState {
   adminId: string;
 }
 
+type ClientMessage =
+  | { type: 'join'; name: string; isAdmin?: boolean }
+  | { type: 'vote'; vote: string }
+  | { type: 'reveal' }
+  | { type: 'newRound' }
+  | { type: 'updateSettings'; settings: Partial<GameSettings> }
+  | { type: 'leave' }
+  | { type: 'endGame' };
+
+const DEFAULT_SETTINGS: GameSettings = {
+  gameName: 'Pokero',
+  allowPlayersToReveal: true,
+  adminCanSpectate: true,
+  votingType: 'fibonacci',
+};
+
+const VALID_VOTING_TYPES: VotingType[] = ['fibonacci', 't-shirt', 'powers-of-2'];
+
+const MAX_NAME_LENGTH = 50;
+const MAX_GAME_NAME_LENGTH = 100;
+
+/**
+ * Sanitizes a player name by trimming and limiting length.
+ */
+function sanitizeName(name: string): string {
+  return name.trim().slice(0, MAX_NAME_LENGTH);
+}
+
+/**
+ * Sanitizes a game name by trimming and limiting length.
+ */
+function sanitizeGameName(name: string): string {
+  return name.trim().slice(0, MAX_GAME_NAME_LENGTH);
+}
+
+/**
+ * Validates that a vote value is reasonable.
+ */
+function isValidVote(vote: unknown): vote is string {
+  return typeof vote === 'string' && vote.length > 0 && vote.length <= 10;
+}
+
+/*
+ * Validates that a voting type is valid.
+ */
+function isValidVotingType(type: unknown): type is VotingType {
+  return typeof type === 'string' && VALID_VOTING_TYPES.includes(type as VotingType);
+}
+
+/**
+ * PartyKit server for managing Pokero game rooms.
+ */
 export default class PokeroServicer implements Party.Server {
+  private gameState: GameState | null = null;
+
   constructor(readonly room: Party.Room) {}
 
-  gameState: GameState | null = null;
-
-  onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
-    // A websocket just connected!
+  /**
+   * Handles new WebSocket connections.
+   */
+  onConnect(conn: Party.Connection, ctx: Party.ConnectionContext): void {
     console.log(
       `Connected:
       id: ${conn.id}
@@ -38,64 +100,89 @@ export default class PokeroServicer implements Party.Server {
       url: ${new URL(ctx.request.url).pathname}`,
     );
 
+    // Send current game state to the new connection
     if (this.gameState) {
-      conn.send(JSON.stringify({ type: 'gameState', state: this.gameState }));
+      this.sendToConnection(conn, { type: 'gameState', state: this.gameState });
     }
   }
 
-  onMessage(message: string, sender: Party.Connection) {
-    try {
-      const msg = JSON.parse(message);
+  /**
+   * Handles incoming messages from clients.
+   */
+  onMessage(message: string, sender: Party.Connection): void {
+    let parsed: ClientMessage;
 
-      switch (msg.type) {
-        case 'join':
-          this.handleJoin(sender.id, msg.name, msg.isAdmin);
-          break;
-        case 'vote':
-          this.handleVote(sender.id, msg.vote);
-          break;
-        case 'reveal':
-          this.handleReveal(sender.id);
-          break;
-        case 'newRound':
-          this.handleNewRound(sender.id);
-          break;
-        case 'updateSettings':
-          this.handleUpdateSettings(sender.id, msg.settings);
-          break;
-      }
+    try {
+      parsed = JSON.parse(message);
+    } catch (error) {
+      console.error('Invalid JSON received:', error);
+      this.sendError(sender, 'Invalid message format.');
+      return;
+    }
+
+    try {
+      this.handleClientMessage(parsed, sender);
     } catch (error) {
       console.error('Error handling message:', error);
-      sender.send(JSON.stringify({ type: 'error', message: 'Failed to process message' }));
+      this.sendError(sender, 'Failed to process message.');
     }
   }
 
-  handleJoin(playerId: string, name: string, isAdmin: boolean = false) {
-    if (!this.gameState) {
-      // First player to join creates the game
-      this.gameState = {
-        gameId: this.room.id,
-        settings: {
-          gameName: 'Pokero',
-          allowPlayersToReveal: true,
-          adminCanSpectate: true,
-        },
-        players: {},
-        roundActive: true,
-        votesRevealed: false,
-        adminId: playerId,
-      };
-      isAdmin = true;
+  /**
+   * Handles connection close events.
+   */
+  onClose(conn: Party.Connection): void {
+    console.log(`Connection closed: ${conn.id} from room ${this.room.id}`);
+    this.handleLeave(conn.id);
+  }
+
+  private handleClientMessage(message: ClientMessage, sender: Party.Connection): void {
+    switch (message.type) {
+      case 'join':
+        this.handleJoin(sender.id, message.name, message.isAdmin);
+        break;
+      case 'vote':
+        this.handleVote(sender.id, message.vote);
+        break;
+      case 'reveal':
+        this.handleReveal(sender.id);
+        break;
+      case 'newRound':
+        this.handleNewRound(sender.id);
+        break;
+      case 'updateSettings':
+        this.handleUpdateSettings(sender.id, message.settings);
+        break;
+      case 'leave':
+        this.handleLeave(sender.id);
+        break;
+      case 'endGame':
+        this.handleEndGame(sender.id);
+        break;
+      default:
+        console.warn('Unknown message type received');
+    }
+  }
+
+  /**
+   * Handles player joining the game.
+   */
+  private handleJoin(playerId: string, name: string, isAdmin = false): void {
+    const sanitizedName = sanitizeName(name);
+
+    if (!sanitizedName) {
+      console.warn('Join rejected: empty name');
+      return;
     }
 
-    if (this.gameState.players[playerId]) {
-      this.broadcast();
-      return;
+    if (!this.gameState) {
+      this.gameState = this.createInitialGameState(playerId);
+      isAdmin = true;
     }
 
     this.gameState.players[playerId] = {
       id: playerId,
-      name,
+      name: sanitizedName,
       isAdmin,
       isSpectator: isAdmin && this.gameState.settings.adminCanSpectate,
       vote: null,
@@ -105,12 +192,20 @@ export default class PokeroServicer implements Party.Server {
     this.broadcast();
   }
 
-  handleVote(playerId: string, vote: string) {
-    if (!this.gameState || !this.gameState.players[playerId]) return;
+  /**
+   * Handles a player submitting a vote.
+   */
+  private handleVote(playerId: string, vote: string): void {
+    if (!this.gameState) return;
+
     const player = this.gameState.players[playerId];
+    if (!player) return;
+
     if (player.isSpectator) return;
 
     if (this.gameState.votesRevealed) return;
+
+    if (!isValidVote(vote)) return;
 
     player.vote = vote;
     player.hasVoted = true;
@@ -118,25 +213,32 @@ export default class PokeroServicer implements Party.Server {
     this.broadcast();
   }
 
-  handleReveal(playerId: string) {
+  /**
+   * Handles revealing all votes.
+   */
+  private handleReveal(playerId: string): void {
     if (!this.gameState) return;
 
     const player = this.gameState.players[playerId];
     if (!player) return;
 
-    if (!player.isAdmin && !this.gameState.settings.allowPlayersToReveal) return;
+    const canReveal = player.isAdmin || this.gameState.settings.allowPlayersToReveal;
+    if (!canReveal) return;
 
     this.gameState.votesRevealed = true;
-
     this.broadcast();
   }
 
-  handleNewRound(playerId: string) {
+  /**
+   * Handles starting a new round.
+   */
+  private handleNewRound(playerId: string): void {
     if (!this.gameState) return;
 
     const player = this.gameState.players[playerId];
-    if (!player || !player.isAdmin) return;
+    if (!player?.isAdmin) return;
 
+    // Reset votes and round state
     for (const p of Object.values(this.gameState.players)) {
       p.vote = null;
       p.hasVoted = false;
@@ -148,30 +250,123 @@ export default class PokeroServicer implements Party.Server {
     this.broadcast();
   }
 
-  handleUpdateSettings(playerId: string, settings: Partial<GameSettings>) {
+  /**
+   * Handles updating game settings.
+   */
+  private handleUpdateSettings(playerId: string, settings: Partial<GameSettings>): void {
     if (!this.gameState) return;
 
     const player = this.gameState.players[playerId];
-    if (!player || !player.isAdmin) return;
+    if (!player?.isAdmin) return;
 
-    this.gameState.settings = { ...this.gameState.settings, ...settings };
+    if (settings.gameName !== undefined) {
+      const sanitized = sanitizeGameName(settings.gameName);
+      if (sanitized) {
+        this.gameState.settings.gameName = sanitized;
+      }
+    }
+
+    if (settings.allowPlayersToReveal !== undefined) {
+      this.gameState.settings.allowPlayersToReveal = Boolean(settings.allowPlayersToReveal);
+    }
 
     if (settings.adminCanSpectate !== undefined) {
+      this.gameState.settings.adminCanSpectate = Boolean(settings.adminCanSpectate);
+
+      // Update existing admin's spectator status
       const admin = this.gameState.players[this.gameState.adminId];
       if (admin) {
-        admin.isSpectator = settings.adminCanSpectate;
+        admin.isSpectator = this.gameState.settings.adminCanSpectate;
         if (settings.adminCanSpectate) {
           admin.vote = null;
           admin.hasVoted = false;
         }
       }
     }
-    this.broadcast();
+
+    if (settings.votingType !== undefined && isValidVotingType(settings.votingType)) {
+      this.gameState.settings.votingType = settings.votingType;
+
+      // Reset votes for all players when voting type changes
+      for (const p of Object.values(this.gameState.players)) {
+        p.vote = null;
+        p.hasVoted = false;
+      }
+      this.gameState.votesRevealed = false;
+    }
 
     console.log('Game settings updated:', this.gameState.settings);
+    this.broadcast();
   }
 
-  broadcast() {
+  /**
+   * Handles a player leaving the game.
+   * If the player is the admin, assigns a new admin.
+   */
+  private handleLeave(playerId: string): void {
+    if (!this.gameState) return;
+
+    const player = this.gameState.players[playerId];
+    if (!player) return;
+
+    const playerName = player.name;
+    const wasAdmin = player.isAdmin;
+
+    delete this.gameState.players[playerId];
+
+    console.log(`Player left: ${playerName} (${playerId})`);
+
+    if (wasAdmin) {
+      const remainingPlayers = Object.values(this.gameState.players);
+      if (remainingPlayers.length > 0) {
+        const newAdmin = remainingPlayers[0];
+        newAdmin.isAdmin = true;
+        this.gameState.adminId = newAdmin.id;
+        console.log(`New admin assigned: ${newAdmin.name} (${newAdmin.id})`);
+      }
+    }
+
+    this.room.broadcast(JSON.stringify({ type: 'playerLeft', playerId, playerName }));
+
+    this.broadcast();
+  }
+
+  /**
+   * Handles ending the game.
+   * Only the admin can end the game.
+   */
+  private handleEndGame(playerId: string): void {
+    if (!this.gameState) return;
+
+    const player = this.gameState.players[playerId];
+    if (!player || !player.isAdmin) return;
+
+    const adminName = player.name;
+    console.log(`Game ${this.room.id} ended by admin: ${adminName} (${playerId})`);
+
+    this.room.broadcast(JSON.stringify({ type: 'gameEnded', endedBy: adminName }));
+
+    this.gameState = null;
+  }
+
+  /**
+   * Creates initial game state for a new game.
+   */
+  private createInitialGameState(adminId: string): GameState {
+    return {
+      gameId: this.room.id,
+      settings: { ...DEFAULT_SETTINGS },
+      players: {},
+      roundActive: true,
+      votesRevealed: false,
+      adminId,
+    };
+  }
+
+  /**
+   * Broadcasts current game state to all connected clients.
+   */
+  private broadcast(): void {
     if (!this.gameState) return;
 
     const message = JSON.stringify({ type: 'gameState', state: this.gameState });
@@ -179,8 +374,21 @@ export default class PokeroServicer implements Party.Server {
     this.room.broadcast(message);
   }
 
-  onClose(conn: Party.Connection) {
-    console.log(`Connection closed: ${conn.id} from room ${this.room.id}`);
+  /**
+   * Sends a message to a specific connection.
+   */
+  private sendToConnection(
+    conn: Party.Connection,
+    message: { type: string; [key: string]: unknown },
+  ): void {
+    conn.send(JSON.stringify(message));
+  }
+
+  /**
+   * Sends an error message to a connection.
+   */
+  private sendError(conn: Party.Connection, message: string): void {
+    this.sendToConnection(conn, { type: 'error', message });
   }
 }
 
