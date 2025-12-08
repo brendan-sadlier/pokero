@@ -3,9 +3,7 @@
  */
 
 import { memo, useMemo } from 'react';
-import { Card, CardContent } from '../../ui/card';
-import { cn } from '../../../lib/utils';
-import { Equal, Scale, Trophy } from 'lucide-react';
+import { Handshake, Scale, Trophy } from 'lucide-react';
 
 interface AverageVoteProps {
   // Calculated average vote
@@ -21,30 +19,22 @@ function AverageVoteComponent({ average, hasVotes }: AverageVoteProps) {
   const displayValue = hasVotes && average !== null ? average.toFixed(1) : '—';
 
   return (
-    <Card className="bg-background">
-      <CardContent className="flex flex-col items-center justify-center gap-4 py-6">
-        <div
-          className={cn(
-            'rounded-xl flex items-center justify-center size-12 border transition-colors',
-            hasVotes
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-muted-foreground/30 bg-muted text-muted-foreground',
-          )}
-          aria-hidden="true"
-        >
-          <Scale className="size-6" />
+    <div className="flex items-center gap-4 group">
+      {/* Icon Container */}
+      <div className="shrink-0 p-3 bg-primary/20 rounded-lg transition-all duration-300">
+        <div className="text-primary">
+          <Scale />
         </div>
-        <div className="space-y-1 text-center">
-          <div
-            className="text-3xl font-bold text-foreground leading-none"
-            aria-label={`Average: ${displayValue}`}
-          >
-            {displayValue}
-          </div>
-          <div className="text-sm text-muted-foreground font-medium">Average</div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-muted-foreground/80 text-sm font-medium truncate">Average</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-bold">{displayValue}</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -99,36 +89,59 @@ function WinningVoteComponent({ distribution, hasVotes }: WinningVoteProps) {
       ? winners.slice(0, 3).join(', ')
       : winners[0] || '—';
 
-  const label = !hasVotes ? 'Winner' : isDraw ? 'Draw' : 'Winner';
-
-  const iconStyles = cn(
-    'rounded-xl flex items-center justify-center size-12 border transition-colors',
-    hasVotes
-      ? isDraw
-        ? 'border-secondary/30 bg-secondary/10 text-secondary'
-        : 'border-primary/30 bg-primary/10 text-primary'
-      : 'border-muted-foreground/30 bg-muted text-muted-foreground',
-  );
-
   return (
-    <Card className="bg-background">
-      <CardContent className="flex flex-col items-center justify-center gap-4 py-6">
-        <div className={iconStyles} aria-hidden="true">
-          {isDraw ? <Equal className="size-6" /> : <Trophy className="size-6" />}
+    <div className="flex items-center gap-4 group">
+      {/* Icon Container */}
+      <div className="shrink-0 p-3 bg-primary/20 rounded-lg transition-all duration-300">
+        <div className="text-primary">
+          <Trophy />
         </div>
-        <div className="space-y-1 text-center">
-          <div
-            className="text-3xl font-bold text-foreground leading-none"
-            aria-label={`${label}: ${displayValue}`}
-          >
-            {displayValue}
-          </div>
-          <div className="text-sm text-muted-foreground font-medium">{label}</div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-muted-foreground/80 text-sm font-medium truncate">Winning Vote</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-bold">{displayValue}</p>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export const WinningVote = memo(WinningVoteComponent);
 WinningVote.displayName = 'WinningVote';
+
+interface AgreeabilityVoteProps {
+  agreeability: number | null;
+  hasVotes: boolean;
+}
+
+/**
+ * Displays the agreeability percentage of votes.
+ */
+function AgreeabilityVoteComponent({ agreeability, hasVotes }: AgreeabilityVoteProps) {
+  const displayValue = hasVotes && agreeability !== null ? `${agreeability.toFixed(1)}%` : '—';
+
+  return (
+    <div className="flex items-center gap-4 group">
+      {/* Icon Container */}
+      <div className="shrink-0 p-3 bg-primary/20 rounded-lg transition-all duration-300">
+        <div className="text-primary">
+          <Handshake />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <p className="text-muted-foreground/80 text-sm font-medium truncate">Agreeability</p>
+        <div className="flex items-baseline gap-2">
+          <p className="text-2xl font-bold">{displayValue}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export const AgreeabilityVote = memo(AgreeabilityVoteComponent);
+AgreeabilityVote.displayName = 'AgreeabilityVote';

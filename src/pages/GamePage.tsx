@@ -425,14 +425,15 @@ export default function Game() {
         </div>
 
         {gameState.votesRevealed && stats && (
-          <>
+          <div className="flex flex-col items-center pb-40">
             {isPlayerAdmin && (
-              <Button onClick={handleNewRound} className="mb-4">
+              <Button onClick={handleNewRound} className="mb-4 hover:cursor-pointer" size="xl">
                 Start New Round
               </Button>
             )}
+
             <RoundStats stats={stats} />
-          </>
+          </div>
         )}
       </div>
     </div>
