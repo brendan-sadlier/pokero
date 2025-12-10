@@ -1,47 +1,51 @@
 import { Link } from 'react-router-dom';
 import Logo from '../logo';
 
+const links = [
+  {
+    title: 'GitHub',
+    href: 'https://github.com/brendan-sadlier/pokero',
+  },
+  {
+    title: 'Request Features',
+    href: 'https://github.com/brendan-sadlier/pokero/discussions/categories/ideas',
+  },
+  {
+    title: 'Report Bugs',
+    href: 'https://github.com/brendan-sadlier/pokero/issues',
+  },
+  {
+    title: 'Buy Me a Coffee',
+    href: 'https://buymeacoffee.com/brendansadlier',
+  },
+];
+
 export default function Footer() {
-  const currentYear = new Date().getFullYear();
-
   return (
-    <footer className="py-6">
+    <footer className="bg-background border-b py-12">
       <div className="mx-auto max-w-5xl px-6">
-        <Link to="/" aria-label="Go to home" className="mx-auto flex size-fit items-center gap-2">
-          <Logo className="size-5" />
-          <h1 className="font-ruska mb-0.5">Pokero</h1>
-        </Link>
+        <div className="flex flex-wrap justify-between gap-12">
+          <div className="order-last flex items-center gap-3 md:order-first">
+            <Link to="/" aria-label="go home">
+              <Logo className="size-6" />
+            </Link>
+            <span className="text-muted-foreground block text-center text-sm">
+              © {new Date().getFullYear()} Brendan Sadlier, All rights reserved
+            </span>
+          </div>
 
-        <nav className="flex flex-wrap justify-center gap-6 text-sm py-3">
-          <a
-            href="https://github.com/brendan-sadlier/pokero"
-            className="text-muted-foreground hover:text-primary block duration-150"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            GitHub
-          </a>
-          <a
-            href="https://github.com/brendan-sadlier/pokero/issues"
-            className="text-muted-foreground hover:text-primary block duration-150"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Report an Issue
-          </a>
-          <a
-            href="https://github.com/brendan-sadlier/pokero/discussions/categories/ideas"
-            className="text-muted-foreground hover:text-primary block duration-150"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Suggest a Feature
-          </a>
-        </nav>
-
-        <span className="text-muted-foreground block text-center text-sm">
-          © {currentYear} Brendan Sadlier, All rights reserved
-        </span>
+          <div className="order-first flex flex-wrap gap-x-6 gap-y-4 md:order-last">
+            {links.map((link, index) => (
+              <a
+                key={index}
+                href={link.href}
+                className="text-muted-foreground hover:text-primary block duration-150"
+              >
+                <span>{link.title}</span>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </footer>
   );
