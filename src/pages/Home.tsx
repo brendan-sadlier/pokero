@@ -4,6 +4,7 @@
  */
 
 import { AnimatedBackground } from '../components/animated-background';
+import CallToActionSection from '../components/landing/cta-section';
 import FeatureSection from '../components/landing/features-section';
 import HeroSection from '../components/landing/hero-section';
 import Footer from '../components/layout/footer';
@@ -21,6 +22,7 @@ export default function Home() {
         <AnimatedBackground />
       </div>
       <FeatureSection />
+      <CallToActionSection />
       <Footer />
     </div>
   );
