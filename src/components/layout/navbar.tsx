@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { ThemeToggle } from './theme-toggle';
 import { Link } from 'react-router-dom';
-import PokeroLogo from './logo';
+import { ThemeToggle } from '../theme-toggle';
+import PokeroLogo from '../logo';
 
 export default function Navbar() {
   return (
