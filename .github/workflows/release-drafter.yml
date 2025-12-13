@@ -4,7 +4,8 @@ on:
   push:
     branches:
       - main
-  pull_request:
+      - develop
+  pull_request_target:
     types: [opened, reopened, synchronize]
 
 permissions:
@@ -15,10 +16,11 @@ jobs:
   update-release-draft:
     name: Draft Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Run Release Drafter
         uses: release-drafter/release-drafter@v6
-        with:
-          config-name: release-drafter.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
