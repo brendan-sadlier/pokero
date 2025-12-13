@@ -1,0 +1,84 @@
+# 'documentation' label for README and any documentation files
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'README.md'
+          - 'docs/**'
+
+# 'frontend' label for React source code changes
+frontend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**'
+          - 'index.html'
+
+# 'backend' label for PartyKit server changes
+backend:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'party/**'
+          - 'partykit.json'
+
+# 'ui-components' label for component changes
+ui-components:
+  - changed-files:
+      - any-glob-to-any-file: 'src/components/**'
+
+# 'styling' label for CSS and styling changes
+styling:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/index.css'
+          - 'src/**/*.css'
+          - 'tailwind.config.*'
+
+# 'config' label for GitHub workflows and CI/CD
+config:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+# 'build' label for build and tooling configuration
+build:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'vite.config.ts'
+          - 'tsconfig*.json'
+          - 'eslint.config.js'
+          - '.prettierrc'
+          - 'components.json'
+          - 'vercel.json'
+
+# 'dependencies' label for package changes
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'package.json'
+          - 'package-lock.json'
+
+# 'types' label for TypeScript type definitions
+types:
+  - changed-files:
+      - any-glob-to-any-file: 'src/types/**'
+
+# 'pages' label for page component changes
+pages:
+  - changed-files:
+      - any-glob-to-any-file: 'src/pages/**'
+
+# 'hooks' label for custom React hooks
+hooks:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/lib/usePartyKit.ts'
+          - 'src/hooks/**'
+
+# 'legal' label for license and legal files
+legal:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'LICENCE*'
+          - 'LICENSE*'
+          - 'NOTICES*'
+          - 'CODE_OF_CONDUCT*'
+          - 'CONTRIBUTING*'
+          - 'SECURITY*'
