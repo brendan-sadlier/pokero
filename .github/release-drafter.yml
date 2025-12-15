@@ -1,0 +1,98 @@
+name-template: 'v$RESOLVED_VERSION 🌈'
+tag-template: 'v$RESOLVED_VERSION'
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🖥️ Frontend'
+    labels:
+      - 'frontend'
+      - 'pages'
+  - title: '⚙️ Backend'
+    labels:
+      - 'backend'
+  - title: '🎨 UI & Styling'
+    labels:
+      - 'ui-components'
+      - 'styling'
+  - title: '🪝 Hooks & Utilities'
+    labels:
+      - 'hooks'
+  - title: '📝 Types'
+    labels:
+      - 'types'
+  - title: '📖 Documentation'
+    labels:
+      - 'documentation'
+  - title: '🏛️ Legal'
+    labels:
+      - 'legal'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '🔧 Build & Configuration'
+    labels:
+      - 'build'
+      - 'config'
+  - title: '📦 Dependencies'
+    labels:
+      - 'dependencies'
+  - title: '🧹 Maintenance'
+    labels:
+      - 'chore'
+      - 'maintenance'
+change-template: '- $TITLE (#$NUMBER) by @$AUTHOR'
+change-title-escapes: '\<*_`'
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+      - 'frontend'
+      - 'backend'
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'patch'
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+      - 'documentation'
+      - 'ui-components'
+      - 'styling'
+      - 'hooks'
+      - 'types'
+      - 'build'
+      - 'config'
+      - 'dependencies'
+  default: patch
+exclude-labels:
+  - 'skip-changelog'
+autolabeler:
+  - label: 'documentation'
+    files:
+      - '*.md'
+  - label: 'frontend'
+    files:
+      - 'src/**'
+  - label: 'backend'
+    files:
+      - 'party/**'
+  - label: 'dependencies'
+    files:
+      - 'package.json'
+      - 'package-lock.json'
+template: |
+  ## What's Changed
+
+  $CHANGES
+
+  ## Contributors
+
+  $CONTRIBUTORS
