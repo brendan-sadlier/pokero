@@ -1,38 +1,32 @@
-name-template: 'v$RESOLVED_VERSION 🌈'
+name-template: 'v$RESOLVED_VERSION 🎲'
 tag-template: 'v$RESOLVED_VERSION'
+
 categories:
   - title: '🚀 Features'
     labels:
       - 'feature'
       - 'enhancement'
-  - title: '🖥️ Frontend'
-    labels:
-      - 'frontend'
-      - 'pages'
-  - title: '⚙️ Backend'
-    labels:
-      - 'backend'
-  - title: '🎨 UI & Styling'
-    labels:
-      - 'ui-components'
-      - 'styling'
-  - title: '🪝 Hooks & Utilities'
-    labels:
-      - 'hooks'
-  - title: '📝 Types'
-    labels:
-      - 'types'
-  - title: '📖 Documentation'
-    labels:
-      - 'documentation'
-  - title: '🏛️ Legal'
-    labels:
-      - 'legal'
   - title: '🐛 Bug Fixes'
     labels:
       - 'fix'
       - 'bugfix'
       - 'bug'
+  - title: '🖥️ Frontend'
+    labels:
+      - 'frontend'
+      - 'pages'
+      - 'ui-components'
+      - 'styling'
+  - title: '⚙️ Backend'
+    labels:
+      - 'backend'
+  - title: '🪝 Hooks & Utilities'
+    labels:
+      - 'hooks'
+      - 'types'
+  - title: '📖 Documentation'
+    labels:
+      - 'documentation'
   - title: '🔧 Build & Configuration'
     labels:
       - 'build'
@@ -44,19 +38,25 @@ categories:
     labels:
       - 'chore'
       - 'maintenance'
+  - title: '🏛️ Legal'
+    labels:
+      - 'legal'
+
 change-template: '- $TITLE (#$NUMBER) by @$AUTHOR'
 change-title-escapes: '\<*_`'
+
 version-resolver:
   major:
     labels:
       - 'major'
+      - 'breaking'
   minor:
     labels:
       - 'minor'
-      - 'frontend'
-      - 'backend'
       - 'feature'
       - 'enhancement'
+      - 'frontend'
+      - 'backend'
   patch:
     labels:
       - 'patch'
@@ -71,13 +71,31 @@ version-resolver:
       - 'build'
       - 'config'
       - 'dependencies'
+      - 'chore'
+      - 'maintenance'
   default: patch
+
 exclude-labels:
   - 'skip-changelog'
+  - 'no-release'
+
 autolabeler:
+  - label: 'feature'
+    branch:
+      - '/^feature[/-].+/'
+      - '/^feat[/-].+/'
+  - label: 'bugfix'
+    branch:
+      - '/^bugfix[/-].+/'
+      - '/^fix[/-].+/'
+      - '/^hotfix[/-].+/'
+  - label: 'chore'
+    branch:
+      - '/^chore[/-].+/'
   - label: 'documentation'
     files:
       - '*.md'
+      - 'docs/**'
   - label: 'frontend'
     files:
       - 'src/**'
@@ -88,6 +106,7 @@ autolabeler:
     files:
       - 'package.json'
       - 'package-lock.json'
+
 template: |
   ## What's Changed
 
@@ -96,3 +115,6 @@ template: |
   ## Contributors
 
   $CONTRIBUTORS
+
+  ---
+  **Full Changelog**: https://github.com/$OWNER/$REPOSITORY/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
