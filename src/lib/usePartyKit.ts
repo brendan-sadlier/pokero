@@ -27,6 +27,8 @@ export interface UsePartyKitOptions {
   onConnectionChange?: (state: ConnectionState) => void;
   onGameEnded?: (endedBy: string) => void;
   onPlayerLeft?: (playerName: string) => void;
+  onPlayerKicked?: (playerName: string, kickedBy: string, wasMe: boolean) => void;
+  onAdminTransferred?: (fromName: string, toName: string, iAmNewAdmin: boolean) => void;
 }
 
 /**
@@ -127,6 +129,22 @@ export function usePartyKit(
         case 'gameEnded':
           optionsRef.current?.onGameEnded?.(message.endedBy);
           break;
+        case 'playerKicked': {
+          const myId = optionsRef.current?.playerId;
+          const wasMe = message.playerId === myId;
+          optionsRef.current?.onPlayerKicked?.(message.playerName, message.kickedBy, wasMe);
+          break;
+        }
+        case 'adminTransferred': {
+          const myPlayerId = optionsRef.current?.playerId;
+          const iAmNewAdmin = message.toPlayerId === myPlayerId;
+          optionsRef.current?.onAdminTransferred?.(
+            message.fromPlayerName,
+            message.toPlayerName,
+            iAmNewAdmin,
+          );
+          break;
+        }
       }
     } catch (err) {
       console.error('Failed to parse message:', err);

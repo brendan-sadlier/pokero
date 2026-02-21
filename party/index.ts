@@ -40,7 +40,9 @@ type ClientMessage =
   | { type: 'newRound' }
   | { type: 'updateSettings'; settings: Partial<GameSettings> }
   | { type: 'leave' }
-  | { type: 'endGame' };
+  | { type: 'endGame' }
+  | { type: 'kickPlayer'; targetPlayerId: string }
+  | { type: 'transferAdmin'; targetPlayerId: string };
 
 const DEFAULT_SETTINGS: GameSettings = {
   gameName: 'Pokero',
@@ -154,6 +156,12 @@ export default class PokeroServicer implements Party.Server {
         break;
       case 'endGame':
         this.handleEndGame(sender.id);
+        break;
+      case 'kickPlayer':
+        this.handleKickPlayer(sender.id, message.targetPlayerId);
+        break;
+      case 'transferAdmin':
+        this.handleTransferAdmin(sender.id, message.targetPlayerId);
         break;
       default:
         console.warn('Unknown message type received');
@@ -344,6 +352,74 @@ export default class PokeroServicer implements Party.Server {
     }
 
     this.room.broadcast(JSON.stringify({ type: 'playerLeft', playerId, playerName }));
+
+    this.broadcast();
+  }
+
+  private handleKickPlayer(adminId: string, targetPlayerId: string): void {
+    if (!this.gameState) return;
+
+    const admin = this.gameState.players[adminId];
+    if (!admin?.isAdmin) return;
+
+    if (adminId === targetPlayerId) return;
+
+    const target = this.gameState.players[targetPlayerId];
+    if (!target) return;
+
+    const targetName = target.name;
+    delete this.gameState.players[targetPlayerId];
+
+    console.log(
+      `Player kicked: ${targetName} (${targetPlayerId}) by admin ${admin.name} (${adminId})`,
+    );
+
+    this.room.broadcast(
+      JSON.stringify({
+        type: 'playerKicked',
+        playerId: targetPlayerId,
+        playerName: targetName,
+        kickedBy: admin.name,
+      }),
+    );
+
+    this.broadcast();
+  }
+
+  private handleTransferAdmin(adminId: string, targetPlayerId: string): void {
+    if (!this.gameState) return;
+
+    const admin = this.gameState.players[adminId];
+    if (!admin?.isAdmin) return;
+
+    if (adminId === targetPlayerId) return;
+
+    const target = this.gameState.players[targetPlayerId];
+    if (!target) return;
+
+    admin.isAdmin = false;
+    admin.isSpectator = false;
+
+    target.isAdmin = true;
+    target.isSpectator = this.gameState.settings.adminCanSpectate;
+    if (target.isSpectator) {
+      target.vote = null;
+      target.hasVoted = false;
+    }
+
+    this.gameState.adminId = targetPlayerId;
+
+    console.log(`Admin transferred from ${admin.name} to ${target.name}`);
+
+    this.room.broadcast(
+      JSON.stringify({
+        type: 'adminTransferred',
+        fromPlayerId: adminId,
+        fromPlayerName: admin.name,
+        toPlayerId: targetPlayerId,
+        toPlayerName: target.name,
+      }),
+    );
 
     this.broadcast();
   }
