@@ -123,6 +123,8 @@ export interface GameState {
   roundActive: boolean;
   // Whether the votes have been revealed
   votesRevealed: boolean;
+  // Timestamp (ms) when countdown ends; null if countdown is not active
+  countdownEnd: number | null;
   // ID of the admin player
   adminId: string;
 }
