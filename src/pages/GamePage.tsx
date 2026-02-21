@@ -24,6 +24,7 @@ import {
 } from '../types';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { GameHeader, RoundStats, VoteStatusCards, VotingCards } from '../components/game';
+import CountdownOverlay from '../components/game/countdown-overlay';
 
 /**
  * Hook to manage player session and identity.
@@ -279,6 +280,11 @@ export default function Game() {
 
   const players = useMemo(() => (gameState ? Object.values(gameState.players) : []), [gameState]);
 
+  const isCountingDown = useMemo(
+    () => gameState?.countdownEnd != null && !gameState.votesRevealed,
+    [gameState],
+  );
+
   const allVoted = useMemo(
     () =>
       gameState
@@ -308,9 +314,13 @@ export default function Game() {
         toast.warning('Spectators cannot vote');
         return;
       }
+      if (isCountingDown) {
+        toast.warning('Voting is locked during countdown');
+        return;
+      }
       sendMessage({ type: 'vote', vote });
     },
-    [isSpectator, sendMessage],
+    [isSpectator, isCountingDown, sendMessage],
   );
 
   const handleReveal = useCallback(() => {
@@ -380,6 +390,10 @@ export default function Game() {
 
   return (
     <div className="min-h-screen">
+      {isCountingDown && gameState.countdownEnd && (
+        <CountdownOverlay countdownEnd={gameState.countdownEnd} />
+      )}
+
       <GameHeader
         gameName={gameState.settings.gameName}
         playerName={currentPlayer.name}

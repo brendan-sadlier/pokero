@@ -29,6 +29,7 @@ interface GameState {
   players: Record<string, Player>;
   roundActive: boolean;
   votesRevealed: boolean;
+  countdownEnd: number | null;
   adminId: string;
 }
 
@@ -52,6 +53,7 @@ const VALID_VOTING_TYPES: VotingType[] = ['fibonacci', 't-shirt', 'powers-of-2']
 
 const MAX_NAME_LENGTH = 50;
 const MAX_GAME_NAME_LENGTH = 100;
+const COUNTDOWN_DURATION_MS = 3000; // 3 secs
 
 /**
  * Sanitizes a player name by trimming and limiting length.
@@ -86,6 +88,7 @@ function isValidVotingType(type: unknown): type is VotingType {
  */
 export default class PokeroServicer implements Party.Server {
   private gameState: GameState | null = null;
+  private countdownTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(readonly room: Party.Room) {}
 
@@ -93,13 +96,6 @@ export default class PokeroServicer implements Party.Server {
    * Handles new WebSocket connections.
    */
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext): void {
-    console.log(
-      `Connected:
-      id: ${conn.id}
-      room: ${this.room.id}
-      url: ${new URL(ctx.request.url).pathname}`,
-    );
-
     // Send current game state to the new connection
     if (this.gameState) {
       this.sendToConnection(conn, { type: 'gameState', state: this.gameState });
@@ -203,7 +199,7 @@ export default class PokeroServicer implements Party.Server {
 
     if (player.isSpectator) return;
 
-    if (this.gameState.votesRevealed) return;
+    if (this.gameState.votesRevealed || this.gameState.countdownEnd) return;
 
     if (!isValidVote(vote)) return;
 
@@ -225,8 +221,23 @@ export default class PokeroServicer implements Party.Server {
     const canReveal = player.isAdmin || this.gameState.settings.allowPlayersToReveal;
     if (!canReveal) return;
 
-    this.gameState.votesRevealed = true;
+    if (this.gameState.countdownEnd || this.gameState.votesRevealed) return;
+
+    this.gameState.countdownEnd = Date.now() + COUNTDOWN_DURATION_MS;
     this.broadcast();
+
+    if (this.countdownTimer) {
+      clearTimeout(this.countdownTimer);
+    }
+
+    this.countdownTimer = setTimeout(() => {
+      if (this.gameState) {
+        this.gameState.votesRevealed = true;
+        this.gameState.countdownEnd = null;
+        this.broadcast();
+      }
+      this.countdownTimer = null;
+    }, COUNTDOWN_DURATION_MS);
   }
 
   /**
@@ -238,6 +249,11 @@ export default class PokeroServicer implements Party.Server {
     const player = this.gameState.players[playerId];
     if (!player?.isAdmin) return;
 
+    if (this.countdownTimer) {
+      clearTimeout(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+
     // Reset votes and round state
     for (const p of Object.values(this.gameState.players)) {
       p.vote = null;
@@ -245,6 +261,7 @@ export default class PokeroServicer implements Party.Server {
     }
 
     this.gameState.votesRevealed = false;
+    this.gameState.countdownEnd = null;
     this.gameState.roundActive = true;
 
     this.broadcast();
@@ -344,6 +361,11 @@ export default class PokeroServicer implements Party.Server {
     const adminName = player.name;
     console.log(`Game ${this.room.id} ended by admin: ${adminName} (${playerId})`);
 
+    if (this.countdownTimer) {
+      clearTimeout(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+
     this.room.broadcast(JSON.stringify({ type: 'gameEnded', endedBy: adminName }));
 
     this.gameState = null;
@@ -359,6 +381,7 @@ export default class PokeroServicer implements Party.Server {
       players: {},
       roundActive: true,
       votesRevealed: false,
+      countdownEnd: null,
       adminId,
     };
   }
