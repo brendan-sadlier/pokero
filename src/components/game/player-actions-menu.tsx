@@ -26,8 +26,7 @@ function PlayerActionsMenuComponent({
   onKick,
   onTransferAdmin,
 }: PlayerActionsMenuProps) {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [, setMenuOpen] = useState(false);
   const [kickDialogOpen, setKickDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
