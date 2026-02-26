@@ -2,7 +2,6 @@
  * @fileoverview Dialog for sharing game invite links.
  */
 
-import { UserPlus } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import {
@@ -16,6 +15,7 @@ import {
 import { memo, useCallback } from 'react';
 import { toast } from 'sonner';
 import { generateShareUrl } from '../../lib/utils';
+import { IconUserPlus } from '@tabler/icons-react';
 
 type GameShareDialogProps = {
   // Game identifier
@@ -49,7 +49,7 @@ function GameShareDialogComponent({ gameId }: GameShareDialogProps) {
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" className="hover:cursor-pointer">
-          <UserPlus />
+          <IconUserPlus />
           Invite Players
         </Button>
       </DialogTrigger>

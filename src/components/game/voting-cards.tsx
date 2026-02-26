@@ -6,6 +6,7 @@
 import { memo, useCallback, useMemo } from 'react';
 import { cn } from '../../lib/utils';
 import { getCardValues, VotingType, type CardValue } from '../../types';
+import { IconCaretDownFilled } from '@tabler/icons-react';
 
 interface VotingCardsProps {
   // Callback when a vote is selected
@@ -90,7 +91,10 @@ function VotingCardComponent({
   return (
     <div className="px-6 py-8">
       <div className="flex flex-col items-center gap-6">
-        <p className="text-foreground">Choose your card 👇</p>
+        <p className="flex items-center gap-1 font-extrabold font-display text-muted-foreground">
+          Choose Your Card
+          <IconCaretDownFilled className="size-4" />
+        </p>
 
         <div
           className="flex gap-3 flex-wrap justify-center"

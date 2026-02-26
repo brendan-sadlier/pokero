@@ -5,8 +5,9 @@
 
 import { AnimatedBackground } from '../components/animated-background';
 import CallToActionSection from '../components/landing/cta-section';
-import FeatureSection from '../components/landing/features-section';
 import HeroSection from '../components/landing/hero-section';
+import { HowItWorksSection } from '../components/landing/how-it-works-section';
+import { WhyPokeroSection } from '../components/landing/why-poker-section';
 import Footer from '../components/layout/footer';
 import Navbar from '../components/layout/navbar';
 
@@ -21,7 +22,8 @@ export default function Home() {
         <HeroSection />
         <AnimatedBackground />
       </div>
-      <FeatureSection />
+      <WhyPokeroSection />
+      <HowItWorksSection />
       <CallToActionSection />
       <Footer />
     </div>

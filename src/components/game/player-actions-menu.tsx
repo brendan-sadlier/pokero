@@ -1,7 +1,7 @@
 import { memo, useCallback, useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { Button } from '../ui/button';
-import { Crown, EllipsisVertical, UserX } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { IconCrown, IconUserX } from '@tabler/icons-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +26,7 @@ function PlayerActionsMenuComponent({
   onKick,
   onTransferAdmin,
 }: PlayerActionsMenuProps) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [menuOpen, setMenuOpen] = useState(false);
   const [kickDialogOpen, setKickDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -52,48 +53,46 @@ function PlayerActionsMenuComponent({
 
   return (
     <>
-      {/* Trigger button */}
-      <Button
-        variant="ghost"
-        size="icon-xs"
-        className="opacity-0 group-hover/player:opacity-100 transition-opacity hover:cursor-pointer hover:bg-muted"
-        onClick={(e) => {
-          e.stopPropagation();
-          setMenuOpen(true);
-        }}
+      <div
+        className="flex items-center gap-1 opacity-0 group-hover/player:opacity-100 focus-within:opacity-100 transition-opacity duration-150"
+        role="toolbar"
         aria-label={`Actions for ${playerName}`}
       >
-        <EllipsisVertical className="size-4" />
-      </Button>
-
-      {/* Actions menu dialog */}
-      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
-        <DialogContent className="sm:max-w-[300px]" showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="text-center">{playerName}</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button
-              variant="outline"
-              className="w-full justify-start gap-3 hover:cursor-pointer"
+              variant="ghost"
+              size="icon-xs"
+              className="size-7 rounded-full hover:bg-primary/15 hover:text-primary hover:cursor-pointer transition-colors"
               onClick={handleTransferClick}
+              aria-label={`Make ${playerName} admin`}
             >
-              <Crown className="size-4 text-primary" />
-              Make Admin
+              <IconCrown className="size-3.5" />
             </Button>
-            <Button
-              variant="outline"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:cursor-pointer"
-              onClick={handleKickClick}
-            >
-              <UserX className="size-4" />
-              Kick Player
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Make Admin
+          </TooltipContent>
+        </Tooltip>
 
-      {/* Kick confirmation dialog */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="size-7 rounded-full hover:bg-destructive/15 hover:text-destructive hover:cursor-pointer transition-colors"
+              onClick={handleKickClick}
+              aria-label={`Kick ${playerName}`}
+            >
+              <IconUserX className="size-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">
+            Kick Player
+          </TooltipContent>
+        </Tooltip>
+      </div>
+
       <AlertDialog open={kickDialogOpen} onOpenChange={setKickDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -109,14 +108,13 @@ function PlayerActionsMenuComponent({
               onClick={handleConfirmKick}
               className="bg-destructive text-white hover:bg-destructive/90 hover:cursor-pointer"
             >
-              <UserX className="size-4" />
+              <IconUserX className="size-4" />
               Kick Player
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Transfer admin confirmation dialog */}
       <AlertDialog open={transferDialogOpen} onOpenChange={setTransferDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -130,7 +128,7 @@ function PlayerActionsMenuComponent({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmTransfer} className="hover:cursor-pointer">
-              <Crown className="size-4" />
+              <IconCrown className="size-4" />
               Transfer Admin
             </AlertDialogAction>
           </AlertDialogFooter>

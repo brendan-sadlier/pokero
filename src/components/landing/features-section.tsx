@@ -4,10 +4,10 @@ import { Card } from '../ui/card';
 export default function FeatureSection() {
   return (
     <section>
-      <div className="py-24">
+      <div className="py-24 bg-muted/5">
         <div className="mx-auto w-full max-w-5xl px-6 space-y-12">
           <div className="relative z-10 grid items-center gap-4 md:grid-cols-2 md:gap-12">
-            <h2 className="text-3xl font-semibold">
+            <h2 className="text-3xl font-extrabold font-display">
               Everything You Need to Estimate, Nothing You Don&apos;t
             </h2>
             <p className="max-w-sm sm:ml-auto">
@@ -15,7 +15,7 @@ export default function FeatureSection() {
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card className="bg-foreground/5 col-span-full overflow-hidden pl-6 pt-6 gap-0">
+            <Card className="col-span-full overflow-hidden pl-6 pt-6 gap-0">
               <Layout className="text-primary size-5" />
               <h3 className="text-foreground mt-5 text-lg font-semibold">
                 Simple, Clean Interface
@@ -44,7 +44,7 @@ export default function FeatureSection() {
                 </div>
               </div>
             </Card>
-            <Card className="px-6 bg-foreground/5 gap-0">
+            <Card className="px-6 gap-0">
               <CircleSlash className="text-primary size-5" />
               <h3 className="text-foreground mt-5 text-lg font-semibold">No Account Needed</h3>
               <p className="text-muted-foreground mt-3 text-balance">
@@ -52,14 +52,14 @@ export default function FeatureSection() {
               </p>
             </Card>
 
-            <Card className="px-6 bg-foreground/5 gap-0">
+            <Card className="px-6 gap-0">
               <SendToBack className="text-primary size-5" />
               <h3 className="text-foreground mt-5 text-lg font-semibold">Instant Game Sharing</h3>
               <p className="text-muted-foreground mt-3 text-balance">
                 Create a game and share a link in seconds to get your team estimating right away.
               </p>
             </Card>
-            <Card className="px-6 bg-foreground/5 gap-0">
+            <Card className="px-6 gap-0">
               <SlidersVertical className="text-primary size-5" />
               <h3 className="text-foreground mt-5 text-lg font-semibold">Flexible Game Settings</h3>
               <p className="text-muted-foreground mt-3 text-balance">

@@ -508,7 +508,7 @@ export default function Game() {
         {gameState.votesRevealed && stats && (
           <div className="flex flex-col items-center pb-40">
             {isPlayerAdmin && (
-              <Button onClick={handleNewRound} className="mb-4 hover:cursor-pointer" size="xl">
+              <Button onClick={handleNewRound} className="mb-4 hover:cursor-pointer" size="lg">
                 Start New Round
               </Button>
             )}
