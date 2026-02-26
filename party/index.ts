@@ -29,6 +29,7 @@ interface GameState {
   players: Record<string, Player>;
   roundActive: boolean;
   votesRevealed: boolean;
+  countdownEnd: number | null;
   adminId: string;
 }
 
@@ -39,7 +40,9 @@ type ClientMessage =
   | { type: 'newRound' }
   | { type: 'updateSettings'; settings: Partial<GameSettings> }
   | { type: 'leave' }
-  | { type: 'endGame' };
+  | { type: 'endGame' }
+  | { type: 'kickPlayer'; targetPlayerId: string }
+  | { type: 'transferAdmin'; targetPlayerId: string };
 
 const DEFAULT_SETTINGS: GameSettings = {
   gameName: 'Pokero',
@@ -52,6 +55,7 @@ const VALID_VOTING_TYPES: VotingType[] = ['fibonacci', 't-shirt', 'powers-of-2']
 
 const MAX_NAME_LENGTH = 50;
 const MAX_GAME_NAME_LENGTH = 100;
+const COUNTDOWN_DURATION_MS = 3000; // 3 secs
 
 /**
  * Sanitizes a player name by trimming and limiting length.
@@ -86,6 +90,7 @@ function isValidVotingType(type: unknown): type is VotingType {
  */
 export default class PokeroServicer implements Party.Server {
   private gameState: GameState | null = null;
+  private countdownTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(readonly room: Party.Room) {}
 
@@ -93,13 +98,6 @@ export default class PokeroServicer implements Party.Server {
    * Handles new WebSocket connections.
    */
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext): void {
-    console.log(
-      `Connected:
-      id: ${conn.id}
-      room: ${this.room.id}
-      url: ${new URL(ctx.request.url).pathname}`,
-    );
-
     // Send current game state to the new connection
     if (this.gameState) {
       this.sendToConnection(conn, { type: 'gameState', state: this.gameState });
@@ -159,6 +157,12 @@ export default class PokeroServicer implements Party.Server {
       case 'endGame':
         this.handleEndGame(sender.id);
         break;
+      case 'kickPlayer':
+        this.handleKickPlayer(sender.id, message.targetPlayerId);
+        break;
+      case 'transferAdmin':
+        this.handleTransferAdmin(sender.id, message.targetPlayerId);
+        break;
       default:
         console.warn('Unknown message type received');
     }
@@ -203,7 +207,7 @@ export default class PokeroServicer implements Party.Server {
 
     if (player.isSpectator) return;
 
-    if (this.gameState.votesRevealed) return;
+    if (this.gameState.votesRevealed || this.gameState.countdownEnd) return;
 
     if (!isValidVote(vote)) return;
 
@@ -225,8 +229,23 @@ export default class PokeroServicer implements Party.Server {
     const canReveal = player.isAdmin || this.gameState.settings.allowPlayersToReveal;
     if (!canReveal) return;
 
-    this.gameState.votesRevealed = true;
+    if (this.gameState.countdownEnd || this.gameState.votesRevealed) return;
+
+    this.gameState.countdownEnd = Date.now() + COUNTDOWN_DURATION_MS;
     this.broadcast();
+
+    if (this.countdownTimer) {
+      clearTimeout(this.countdownTimer);
+    }
+
+    this.countdownTimer = setTimeout(() => {
+      if (this.gameState) {
+        this.gameState.votesRevealed = true;
+        this.gameState.countdownEnd = null;
+        this.broadcast();
+      }
+      this.countdownTimer = null;
+    }, COUNTDOWN_DURATION_MS);
   }
 
   /**
@@ -238,6 +257,11 @@ export default class PokeroServicer implements Party.Server {
     const player = this.gameState.players[playerId];
     if (!player?.isAdmin) return;
 
+    if (this.countdownTimer) {
+      clearTimeout(this.countdownTimer);
+      this.countdownTimer = null;
+    }
+
     // Reset votes and round state
     for (const p of Object.values(this.gameState.players)) {
       p.vote = null;
@@ -245,6 +269,7 @@ export default class PokeroServicer implements Party.Server {
     }
 
     this.gameState.votesRevealed = false;
+    this.gameState.countdownEnd = null;
     this.gameState.roundActive = true;
 
     this.broadcast();
@@ -331,6 +356,74 @@ export default class PokeroServicer implements Party.Server {
     this.broadcast();
   }
 
+  private handleKickPlayer(adminId: string, targetPlayerId: string): void {
+    if (!this.gameState) return;
+
+    const admin = this.gameState.players[adminId];
+    if (!admin?.isAdmin) return;
+
+    if (adminId === targetPlayerId) return;
+
+    const target = this.gameState.players[targetPlayerId];
+    if (!target) return;
+
+    const targetName = target.name;
+    delete this.gameState.players[targetPlayerId];
+
+    console.log(
+      `Player kicked: ${targetName} (${targetPlayerId}) by admin ${admin.name} (${adminId})`,
+    );
+
+    this.room.broadcast(
+      JSON.stringify({
+        type: 'playerKicked',
+        playerId: targetPlayerId,
+        playerName: targetName,
+        kickedBy: admin.name,
+      }),
+    );
+
+    this.broadcast();
+  }
+
+  private handleTransferAdmin(adminId: string, targetPlayerId: string): void {
+    if (!this.gameState) return;
+
+    const admin = this.gameState.players[adminId];
+    if (!admin?.isAdmin) return;
+
+    if (adminId === targetPlayerId) return;
+
+    const target = this.gameState.players[targetPlayerId];
+    if (!target) return;
+
+    admin.isAdmin = false;
+    admin.isSpectator = false;
+
+    target.isAdmin = true;
+    target.isSpectator = this.gameState.settings.adminCanSpectate;
+    if (target.isSpectator) {
+      target.vote = null;
+      target.hasVoted = false;
+    }
+
+    this.gameState.adminId = targetPlayerId;
+
+    console.log(`Admin transferred from ${admin.name} to ${target.name}`);
+
+    this.room.broadcast(
+      JSON.stringify({
+        type: 'adminTransferred',
+        fromPlayerId: adminId,
+        fromPlayerName: admin.name,
+        toPlayerId: targetPlayerId,
+        toPlayerName: target.name,
+      }),
+    );
+
+    this.broadcast();
+  }
+
   /**
    * Handles ending the game.
    * Only the admin can end the game.
@@ -343,6 +436,11 @@ export default class PokeroServicer implements Party.Server {
 
     const adminName = player.name;
     console.log(`Game ${this.room.id} ended by admin: ${adminName} (${playerId})`);
+
+    if (this.countdownTimer) {
+      clearTimeout(this.countdownTimer);
+      this.countdownTimer = null;
+    }
 
     this.room.broadcast(JSON.stringify({ type: 'gameEnded', endedBy: adminName }));
 
@@ -359,6 +457,7 @@ export default class PokeroServicer implements Party.Server {
       players: {},
       roundActive: true,
       votesRevealed: false,
+      countdownEnd: null,
       adminId,
     };
   }

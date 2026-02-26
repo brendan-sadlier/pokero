@@ -1,30 +1,26 @@
 import { Link } from 'react-router-dom';
 import { Button } from '../ui/button';
-import AnimatedBackground from '../animated-background';
+import Balancer from 'react-wrap-balancer';
+import { IconChevronRight } from '@tabler/icons-react';
 
 export default function CallToActionSection() {
   return (
-    <section className="bg-background flex-1 overflow-hidden relative flex items-center justify-center border-t border-b border-muted-foreground/5">
-      <div className="py-12 container mx-auto relative z-10">
+    <section>
+      <div className="bg-background/50 py-12 border-b border-accent">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            <div>
-              <h2 className="text-foreground text-balance text-3xl font-semibold lg:text-4xl">
-                Plan Faster with Pokero
-              </h2>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button asChild variant="outline" size="lg">
-                <Link to="/join">Join Game</Link>
-              </Button>
-              <Button asChild size="lg">
-                <Link to="/create">Create Game</Link>
-              </Button>
-            </div>
+          <h2 className="max-w-lg text-balance text-2xl font-extrabold font-display text-primary lg:text-3xl">
+            <Balancer>Your Next Estimation Session is One Click Away</Balancer>
+          </h2>
+          <p className="mt-4 text-lg text-foreground/80">
+            <Balancer>No sign-up. No credit card. No nonsense.</Balancer>
+          </p>
+          <div className="mt-8 flex gap-3">
+            <Button asChild effect="expandIcon" icon={IconChevronRight} iconPlacement="right">
+              <Link to="/create">Start a Session</Link>
+            </Button>
           </div>
         </div>
       </div>
-      <AnimatedBackground />
     </section>
   );
 }

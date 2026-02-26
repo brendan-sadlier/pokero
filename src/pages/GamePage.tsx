@@ -23,7 +23,13 @@ import {
   type GameSettings,
 } from '../types';
 import { AlertCircle, RefreshCw } from 'lucide-react';
-import { GameHeader, RoundStats, VoteStatusCards, VotingCards } from '../components/game';
+import {
+  CountdownOverlay,
+  GameHeader,
+  RoundStats,
+  VoteStatusCards,
+  VotingCards,
+} from '../components/game';
 
 /**
  * Hook to manage player session and identity.
@@ -160,6 +166,37 @@ export default function Game() {
     toast.info(`${playerName} has left the game.`);
   }, []);
 
+  const handlePlayerKicked = useCallback(
+    (playerName: string, kickedBy: string, wasMe: boolean) => {
+      if (wasMe) {
+        if (gameId) {
+          clearPlayerSession(gameId);
+        }
+        toast.error(`You were kicked from the game by ${kickedBy}.`, {
+          description: 'You will be redirected to the home page.',
+          duration: 3000,
+        });
+        setTimeout(() => {
+          navigate('/');
+        }, 1500);
+      } else {
+        toast.info(`${playerName} was kicked from the game.`);
+      }
+    },
+    [gameId, navigate],
+  );
+
+  const handleAdminTransferred = useCallback(
+    (fromName: string, toName: string, iAmNewAdmin: boolean) => {
+      if (iAmNewAdmin) {
+        toast.success(`${fromName} made you the admin!`);
+      } else {
+        toast.info(`${fromName} transferred admin to ${toName}.`);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (gameId) {
@@ -180,6 +217,8 @@ export default function Game() {
     onConnectionChange: handleConnectionChange,
     onGameEnded: handleGameEnded,
     onPlayerLeft: handlePlayerLeft,
+    onPlayerKicked: handlePlayerKicked,
+    onAdminTransferred: handleAdminTransferred,
   });
 
   // Redirect if no valid player name
@@ -279,6 +318,11 @@ export default function Game() {
 
   const players = useMemo(() => (gameState ? Object.values(gameState.players) : []), [gameState]);
 
+  const isCountingDown = useMemo(
+    () => gameState?.countdownEnd != null && !gameState.votesRevealed,
+    [gameState],
+  );
+
   const allVoted = useMemo(
     () =>
       gameState
@@ -308,9 +352,13 @@ export default function Game() {
         toast.warning('Spectators cannot vote');
         return;
       }
+      if (isCountingDown) {
+        toast.warning('Voting is locked during countdown');
+        return;
+      }
       sendMessage({ type: 'vote', vote });
     },
-    [isSpectator, sendMessage],
+    [isSpectator, isCountingDown, sendMessage],
   );
 
   const handleReveal = useCallback(() => {
@@ -365,6 +413,28 @@ export default function Game() {
     navigate('/');
   }, [gameId, isPlayerAdmin, sendMessage, navigate]);
 
+  const handleKickPlayer = useCallback(
+    (targetPlayerId: string) => {
+      if (!isPlayerAdmin) {
+        toast.warning('Only the admin can kick players');
+        return;
+      }
+      sendMessage({ type: 'kickPlayer', targetPlayerId });
+    },
+    [isPlayerAdmin, sendMessage],
+  );
+
+  const handleTransferAdmin = useCallback(
+    (targetPlayerId: string) => {
+      if (!isPlayerAdmin) {
+        toast.warning('Only the admin can transfer admin rights');
+        return;
+      }
+      sendMessage({ type: 'transferAdmin', targetPlayerId });
+    },
+    [isPlayerAdmin, sendMessage],
+  );
+
   // Render states
   if (!connected && !error) {
     return <LoadingState message="Connecting to game" retryCount={retryCount} />;
@@ -380,6 +450,10 @@ export default function Game() {
 
   return (
     <div className="min-h-screen">
+      {isCountingDown && gameState.countdownEnd && (
+        <CountdownOverlay countdownEnd={gameState.countdownEnd} />
+      )}
+
       <GameHeader
         gameName={gameState.settings.gameName}
         playerName={currentPlayer.name}
@@ -394,7 +468,14 @@ export default function Game() {
       <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4">
         <div className="flex flex-col items-center justify-center grow w-full">
           <div className="w-full flex justify-center sticky bottom-0 pb-4">
-            <VoteStatusCards players={players} votesRevealed={gameState.votesRevealed} />
+            <VoteStatusCards
+              players={players}
+              votesRevealed={gameState.votesRevealed}
+              isCurrentUserAdmin={isPlayerAdmin}
+              currentPlayerId={currentPlayer.id}
+              onKickPlayer={handleKickPlayer}
+              onTransferAdmin={handleTransferAdmin}
+            />
           </div>
 
           {!gameState.votesRevealed && (
@@ -427,7 +508,7 @@ export default function Game() {
         {gameState.votesRevealed && stats && (
           <div className="flex flex-col items-center pb-40">
             {isPlayerAdmin && (
-              <Button onClick={handleNewRound} className="mb-4 hover:cursor-pointer" size="xl">
+              <Button onClick={handleNewRound} className="mb-4 hover:cursor-pointer" size="lg">
                 Start New Round
               </Button>
             )}

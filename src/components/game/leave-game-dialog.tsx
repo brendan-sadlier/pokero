@@ -3,10 +3,8 @@
  * Allows players to leave the game or end it if they are the admin.
  */
 
-import { Crown, DoorOpen } from 'lucide-react';
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -17,6 +15,15 @@ import {
 } from '../ui/alert-dialog';
 import { Button } from '../ui/button';
 import { memo } from 'react';
+import { IconChevronDown, IconCrown, IconDoorExit } from '@tabler/icons-react';
+import { ButtonGroup } from '../ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 
 type LeaveGameDialogProps = {
   // Callback when the player chooses to leave the game
@@ -46,13 +53,8 @@ function LeaveGameDialogComponent({ onLeave, onEndGame, isAdmin }: LeaveGameDial
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button
-          variant="destructive"
-          size="icon"
-          aria-label="Leave game"
-          className="hover:cursor-pointer"
-        >
-          <DoorOpen />
+        <Button variant="destructive" size="icon" aria-label="Leave game">
+          <IconDoorExit />
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -62,21 +64,38 @@ function LeaveGameDialogComponent({ onLeave, onEndGame, isAdmin }: LeaveGameDial
         </AlertDialogHeader>
         <AlertDialogFooter className={isAdmin ? 'flex-col sm:flex-row gap-2' : ''}>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          {isAdmin && onEndGame && (
-            <AlertDialogAction
-              onClick={onEndGame}
-              className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 hover:cursor-pointer"
-            >
-              <Crown />
-              End Game
-            </AlertDialogAction>
+          {isAdmin && onEndGame ? (
+            <ButtonGroup>
+              <Button variant="destructive">Leave Game</Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="border-border border-l"
+                    onClick={onLeave}
+                  >
+                    <IconChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={onEndGame}
+                      className="hover:cursor-pointer"
+                    >
+                      <IconCrown />
+                      End Game
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </ButtonGroup>
+          ) : (
+            <Button variant="destructive" onClick={onLeave}>
+              Leave Game
+            </Button>
           )}
-          <AlertDialogAction
-            onClick={onLeave}
-            className="bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 hover:cursor-pointer"
-          >
-            Leave Game
-          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

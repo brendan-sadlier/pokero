@@ -123,6 +123,8 @@ export interface GameState {
   roundActive: boolean;
   // Whether the votes have been revealed
   votesRevealed: boolean;
+  // Timestamp (ms) when countdown ends; null if countdown is not active
+  countdownEnd: number | null;
   // ID of the admin player
   adminId: string;
 }
@@ -154,7 +156,9 @@ export type ClientMessage =
   | NewRoundMessage
   | UpdateSettingsMessage
   | LeaveMessage
-  | EndGameMessage;
+  | EndGameMessage
+  | KickPlayerMessage
+  | TransferAdminMessage;
 
 // Message to join a game
 export interface JoinMessage {
@@ -195,11 +199,29 @@ export interface EndGameMessage {
   readonly type: 'endGame';
 }
 
+// Message for admin to kick a player
+export interface KickPlayerMessage {
+  readonly type: 'kickPlayer';
+  targetPlayerId: string;
+}
+
+// Message for admin to transfer admin rights to another player
+export interface TransferAdminMessage {
+  readonly type: 'transferAdmin';
+  targetPlayerId: string;
+}
+
 /**
  * Messages sent from server to client.
  * Uses discriminated union for type-safe message handling.
  */
-export type ServerMessage = GameStateMessage | ErrorMessage | PlayerLeftMessage | GameEndedMessage;
+export type ServerMessage =
+  | GameStateMessage
+  | ErrorMessage
+  | PlayerLeftMessage
+  | GameEndedMessage
+  | PlayerKickedMessage
+  | AdminTransferredMessage;
 
 // Message containing updated game state
 export interface GameStateMessage {
@@ -224,6 +246,23 @@ export interface PlayerLeftMessage {
 export interface GameEndedMessage {
   readonly type: 'gameEnded';
   endedBy: string;
+}
+
+// Message indicating a player was kicked by the admin
+export interface PlayerKickedMessage {
+  readonly type: 'playerKicked';
+  playerId: string;
+  playerName: string;
+  kickedBy: string;
+}
+
+// Message indicating admin rights were transferred
+export interface AdminTransferredMessage {
+  readonly type: 'adminTransferred';
+  fromPlayerId: string;
+  fromPlayerName: string;
+  toPlayerId: string;
+  toPlayerName: string;
 }
 
 /**

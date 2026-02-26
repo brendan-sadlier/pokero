@@ -6,6 +6,8 @@
 import { CircleCheck, Eye } from 'lucide-react';
 import { memo } from 'react';
 import { cn } from '../../lib/utils';
+import PlayerActionsMenu from './player-actions-menu';
+import { IconCrown } from '@tabler/icons-react';
 
 export interface PlayerVoteStatus {
   // Unique player identifier
@@ -18,6 +20,8 @@ export interface PlayerVoteStatus {
   hasVoted: boolean;
   // Whether the player is a spectator
   isSpectator?: boolean;
+  // Whether the player is the admin
+  isAdmin?: boolean;
 }
 
 interface VoteStatusCardsProps {
@@ -25,6 +29,14 @@ interface VoteStatusCardsProps {
   players: PlayerVoteStatus[];
   // Whether votes have been revealed
   votesRevealed: boolean;
+  // Whether the current user is the admin (enables player action menus)
+  isCurrentUserAdmin?: boolean;
+  // The current user's player ID (to exclude self from actions)
+  currentPlayerId?: string;
+  // Callback when admin kicks a player
+  onKickPlayer?: (playerId: string) => void;
+  // Callback when admin transfers admin rights
+  onTransferAdmin?: (playerId: string) => void;
 }
 
 interface VoteStatusCardProps {
@@ -32,6 +44,12 @@ interface VoteStatusCardProps {
   player: PlayerVoteStatus;
   // Whether votes are revealed
   votesRevealed: boolean;
+  // Whether to show admin actions on this card
+  showActions: boolean;
+  // Callback when admin kicks a player
+  onKickPlayer?: (playerId: string) => void;
+  // Callback when admin transfers admin rights
+  onTransferAdmin?: (playerId: string) => void;
 }
 
 /**
@@ -41,8 +59,11 @@ interface VoteStatusCardProps {
 const VoteStatusCard = memo(function VoteStatusCard({
   player,
   votesRevealed,
+  showActions,
+  onKickPlayer,
+  onTransferAdmin,
 }: VoteStatusCardProps) {
-  const { name, vote, hasVoted, isSpectator } = player;
+  const { name, vote, hasVoted, isSpectator, isAdmin } = player;
 
   const renderCardContent = () => {
     if (votesRevealed) {
@@ -69,7 +90,8 @@ const VoteStatusCard = memo(function VoteStatusCard({
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="group/player flex flex-col items-center relative">
+      {/* Vote card */}
       <div
         className={cn(
           'flex items-center justify-center w-20 h-32 rounded-xl shadow-md text-xl font-bold transition-all',
@@ -83,7 +105,26 @@ const VoteStatusCard = memo(function VoteStatusCard({
       >
         {renderCardContent()}
       </div>
-      <span className="mt-2 text-md font-bold">{name}</span>
+
+      {/* Player name + admin badge */}
+      <div className="flex flex-col items-center justify-center gap-1 max-w-24 mt-2">
+        <div className="flex items-center gap-1">
+          {isAdmin && <IconCrown className="size-4 text-primary shrink-0" aria-label="Admin" />}
+          <span className="text-md font-bold truncate" title={name}>
+            {name}
+          </span>
+        </div>
+        {showActions && onKickPlayer && onTransferAdmin && (
+          <div className="h-8 flex items-center justify-center">
+            <PlayerActionsMenu
+              playerId={player.id}
+              playerName={player.name}
+              onKick={onKickPlayer}
+              onTransferAdmin={onTransferAdmin}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 });
@@ -99,7 +140,14 @@ VoteStatusCard.displayName = 'VoteStatusCard';
  *   votesRevealed={gameState.votesRevealed}
  * />
  */
-function VoteStatusCardsComponent({ players, votesRevealed }: VoteStatusCardsProps) {
+function VoteStatusCardsComponent({
+  players,
+  votesRevealed,
+  isCurrentUserAdmin = false,
+  currentPlayerId,
+  onKickPlayer,
+  onTransferAdmin,
+}: VoteStatusCardsProps) {
   return (
     <div
       className="flex flex-wrap justify-center gap-5 py-4"
@@ -107,7 +155,14 @@ function VoteStatusCardsComponent({ players, votesRevealed }: VoteStatusCardsPro
       aria-label="Player voting status"
     >
       {players.map((player) => (
-        <VoteStatusCard key={player.id} player={player} votesRevealed={votesRevealed} />
+        <VoteStatusCard
+          key={player.id}
+          player={player}
+          votesRevealed={votesRevealed}
+          showActions={isCurrentUserAdmin && player.id !== currentPlayerId}
+          onKickPlayer={onKickPlayer}
+          onTransferAdmin={onTransferAdmin}
+        />
       ))}
     </div>
   );
