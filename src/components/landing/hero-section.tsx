@@ -62,15 +62,7 @@ export default function HeroSection() {
           >
             <Link to="/create">Start a Session</Link>
           </Button>
-          <Button
-            variant="outline"
-            effect="expandIcon"
-            icon={IconCirclePlus}
-            iconPlacement="right"
-            asChild
-            size="lg"
-            className="w-full sm:w-auto text-lg"
-          >
+          <Button variant="outline" asChild size="lg" className="w-full sm:w-auto text-lg">
             <Link to="/join">Join Game</Link>
           </Button>
         </motion.div>
