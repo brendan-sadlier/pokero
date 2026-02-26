@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Button } from '../ui/button';
 import { Link } from 'react-router-dom';
-import { IconChevronRight, IconCirclePlus } from '@tabler/icons-react';
+import { IconChevronRight } from '@tabler/icons-react';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
