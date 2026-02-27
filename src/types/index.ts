@@ -109,6 +109,19 @@ export const DEFAULT_GAME_SETTINGS: Readonly<GameSettings> = {
   votingType: VotingType.FIBONACCI,
 } as const;
 
+export interface RoundHistoryEntry {
+  roundNumber: number;
+  completedAt: number;
+  distribution: Record<string, number>;
+  average: number | null;
+  winners: string[];
+  isDraw: boolean;
+  agreeability: number | null;
+  voterCount: number;
+  playerVotes: Record<string, string>;
+  votingType: VotingType;
+}
+
 /**
  * Complete state of a Pokero game session.
  */
@@ -127,6 +140,8 @@ export interface GameState {
   countdownEnd: number | null;
   // ID of the admin player
   adminId: string;
+  // History of completed rounds
+  history: RoundHistoryEntry[];
 }
 
 /**
