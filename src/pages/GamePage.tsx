@@ -463,6 +463,7 @@ export default function Game() {
         onUpdate={handleUpdateSettings}
         onLeave={handleLeaveGame}
         onEndGame={handleEndGame}
+        history={gameState.history}
       />
 
       <div className="flex flex-col items-center justify-between min-h-[calc(100vh-80px)] px-4">
