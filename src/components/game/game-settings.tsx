@@ -19,13 +19,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../ui/dialog';
-import { Settings } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Switch } from '../ui/switch';
 import { toast } from 'sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { IconAdjustments } from '@tabler/icons-react';
 
 interface GameSettingsProps {
   // Current game settings
@@ -114,12 +114,8 @@ function GameSettingsComponent({ settings, onUpdate }: GameSettingsProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          className="hover:cursor-pointer hover:scale-110 transition-transform hover:text-primary"
-          aria-label="Open game settings"
-        >
-          <Settings />
+        <Button variant="ghost" size="icon" aria-label="Open game settings">
+          <IconAdjustments />
         </Button>
       </DialogTrigger>
 

@@ -23,6 +23,19 @@ interface GameSettings {
   votingType: VotingType;
 }
 
+interface RoundHistoryEntry {
+  roundNumber: number;
+  completedAt: number;
+  distribution: Record<string, number>;
+  average: number | null;
+  winners: string[];
+  isDraw: boolean;
+  agreeability: number | null;
+  voterCount: number;
+  playerVotes: Record<string, string>;
+  votingType: VotingType;
+}
+
 interface GameState {
   gameId: string;
   settings: GameSettings;
@@ -31,6 +44,7 @@ interface GameState {
   votesRevealed: boolean;
   countdownEnd: number | null;
   adminId: string;
+  history: RoundHistoryEntry[];
 }
 
 type ClientMessage =
@@ -52,6 +66,12 @@ const DEFAULT_SETTINGS: GameSettings = {
 };
 
 const VALID_VOTING_TYPES: VotingType[] = ['fibonacci', 't-shirt', 'powers-of-2'];
+
+const CARD_VALUES_BY_TYPE: Record<VotingType, readonly string[]> = {
+  fibonacci: ['0', '1', '2', '3', '5', '8', '13', '21', '34', '?'],
+  't-shirt': ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?'],
+  'powers-of-2': ['0', '1', '2', '4', '8', '16', '32', '64', '?'],
+};
 
 const MAX_NAME_LENGTH = 50;
 const MAX_GAME_NAME_LENGTH = 100;
@@ -242,10 +262,101 @@ export default class PokeroServicer implements Party.Server {
       if (this.gameState) {
         this.gameState.votesRevealed = true;
         this.gameState.countdownEnd = null;
+
+        this.captureRoundHistory();
+
         this.broadcast();
       }
       this.countdownTimer = null;
     }, COUNTDOWN_DURATION_MS);
+  }
+
+  private captureRoundHistory(): void {
+    if (!this.gameState) return;
+
+    const players = Object.values(this.gameState.players);
+    const voters = players.filter((p) => !p.isSpectator && p.vote !== null);
+
+    if (voters.length === 0) return;
+
+    const distribution: Record<string, number> = {};
+    let playerVotes: Record<string, string> = {};
+    const numericVotes: number[] = [];
+
+    for (const voter of voters) {
+      const vote = voter.vote as string;
+      distribution[vote] = (distribution[vote] || 0) + 1;
+      playerVotes[voter.name] = vote;
+
+      const num = parseFloat(vote);
+      if (!isNaN(num) && isFinite(num)) {
+        numericVotes.push(num);
+      }
+    }
+
+    const average =
+      numericVotes.length > 0
+        ? numericVotes.reduce((sum, v) => sum + v, 0) / numericVotes.length
+        : null;
+
+    const entries = Object.entries(distribution);
+    const maxCount = Math.max(...entries.map(([_, count]) => count));
+    const winners = entries.filter(([, count]) => count === maxCount).map(([vote]) => vote);
+    const isDraw = winners.length > 1;
+
+    let agreeability: number | null = null;
+    const votingType = this.gameState.settings.votingType;
+    const choices = CARD_VALUES_BY_TYPE[votingType];
+
+    if (choices && voters.length > 0) {
+      const indexMap = new Map<string, number>();
+      choices.forEach((choice, index) => indexMap.set(choice, index));
+
+      let voteCount = 0;
+      let weightedIdxSum = 0;
+
+      for (const [vote, count] of entries) {
+        const idx = indexMap.get(vote);
+        if (idx == null) continue;
+
+        voteCount += count;
+        weightedIdxSum += idx * count;
+      }
+
+      if (voteCount > 0) {
+        const meanIdx = weightedIdxSum / voteCount;
+        let weightedDistanceSum = 0;
+
+        for (const [vote, count] of entries) {
+          const idx = indexMap.get(vote);
+          if (idx == null) continue;
+
+          weightedDistanceSum += Math.abs(idx - meanIdx) * count;
+        }
+        const avgDistance = weightedDistanceSum / voteCount;
+        const maxDistance = Math.max(choices.length - 1, 1);
+        const normalized = avgDistance / maxDistance;
+        agreeability = Math.max(0, Math.min(1, 1 - normalized)) * 100;
+      }
+    }
+
+    const roundNumber = this.gameState.history.length + 1;
+
+    const entry: RoundHistoryEntry = {
+      roundNumber,
+      completedAt: Date.now(),
+      distribution,
+      average,
+      winners,
+      isDraw,
+      agreeability,
+      voterCount: voters.length,
+      playerVotes,
+      votingType,
+    };
+    this.gameState.history.push(entry);
+
+    console.log(`Round ${roundNumber} captured in history for room ${this.room.id}`);
   }
 
   /**
@@ -459,6 +570,7 @@ export default class PokeroServicer implements Party.Server {
       votesRevealed: false,
       countdownEnd: null,
       adminId,
+      history: [],
     };
   }
 

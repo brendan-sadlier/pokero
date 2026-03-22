@@ -2,6 +2,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ThemeToggle } from '../theme-toggle';
 import PokeroLogo from '../logo';
+import { Button } from '../ui/button';
+import { IconChevronRight } from '@tabler/icons-react';
 
 export default function Navbar() {
   return (
@@ -14,11 +16,9 @@ export default function Navbar() {
             transition={{ duration: 0.5 }}
             className="flex items-center"
           >
-            <Link to="/" className="flex items-center gap-2 text-xl font-ruska">
-              <PokeroLogo className="size-6" />
-              <span className="bg-linear-to-r from-primary to-secondary inline-block text-transparent bg-clip-text mb-0.5">
-                Pokero
-              </span>
+            <Link to="/" className="flex items-center gap-2.5 text-xl font-ruska">
+              <PokeroLogo className="h-6 w-6 text-primary" />
+              <span className="font-display font-extrabold">Pokero</span>
             </Link>
           </motion.div>
           <motion.div
@@ -28,18 +28,14 @@ export default function Navbar() {
             className="flex items-center space-x-4"
           >
             <ThemeToggle />
-            <Link
-              to="/join"
-              className="hidden sm:inline-flex text-md font-medium text-foreground hover:text-secondary hover:scale-105 transition-all duration-200"
-            >
-              Join Game
-            </Link>
-            <Link
-              to="/create"
-              className="hidden sm:inline-flex items-center text-md font-medium text-primary bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-lg hover:scale-105 transition-all duration-200"
-            >
-              Create Game
-            </Link>
+            <Button variant="ghost" asChild>
+              <Link to="/join" className="">
+                Join Game
+              </Link>
+            </Button>
+            <Button asChild effect="expandIcon" icon={IconChevronRight} iconPlacement="right">
+              <Link to="/create">Create Game</Link>
+            </Button>
           </motion.div>
         </div>
       </div>

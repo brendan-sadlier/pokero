@@ -8,6 +8,7 @@ import { Toaster } from './components/ui/sonner';
 import { ErrorBoundary, useErrorHandler } from './components/ErrorBoundary';
 import { clearAllExpiredSessions } from './lib/sessionManager';
 import { useEffect } from 'react';
+import { TooltipProvider } from './components/ui/tooltip';
 
 function AppContext() {
   useErrorHandler();
@@ -31,12 +32,14 @@ function AppContext() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-        <BrowserRouter>
-          <AppContext />
-        </BrowserRouter>
-        <Toaster position="top-center" richColors closeButton />
-      </ThemeProvider>
+      <TooltipProvider>
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          <BrowserRouter>
+            <AppContext />
+          </BrowserRouter>
+          <Toaster position="top-center" richColors closeButton />
+        </ThemeProvider>
+      </TooltipProvider>
     </ErrorBoundary>
   );
 }

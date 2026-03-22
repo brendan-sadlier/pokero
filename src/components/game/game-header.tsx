@@ -1,10 +1,11 @@
 import PokeroLogo from '../logo';
 import { ThemeToggle } from '../theme-toggle';
 import GameSettings from './game-settings';
-import type { GameSettings as GameSettingsType } from '../../types';
+import type { GameSettings as GameSettingsType, RoundHistoryEntry } from '../../types';
 import GameShareDialog from './game-share-dialog';
 import LeaveGameDialog from './leave-game-dialog';
 import { memo } from 'react';
+import GameHistory from './game-history';
 
 type GameHeaderProps = {
   // Name of the game
@@ -23,6 +24,8 @@ type GameHeaderProps = {
   onLeave: () => void;
   // Callback when the admin chooses to end the game
   onEndGame: () => void;
+  // History of completed rounds
+  history: RoundHistoryEntry[];
 };
 
 /**
@@ -37,6 +40,7 @@ type GameHeaderProps = {
  *   isAdmin={isPlayerAdmin}
  *   settings={gameState.settings}
  *   onUpdate={handleUpdateSettings}
+ *   history={gameState.history}
  * />
  */
 function GameHeaderComponent({
@@ -48,14 +52,15 @@ function GameHeaderComponent({
   onUpdate,
   onLeave,
   onEndGame,
+  history,
 }: GameHeaderProps) {
   return (
     <header className="border-b border-border">
       <div className="px-6 py-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between">
           {/* Logo and Game Name */}
           <div className="flex items-center gap-3">
-            <PokeroLogo className="h-8 w-8" />
+            <PokeroLogo className="h-6 w-6 text-primary" />
             <h1 className="text-xl font-bold text-foreground">{gameName}</h1>
           </div>
 
@@ -68,6 +73,7 @@ function GameHeaderComponent({
           <div className="flex items-center gap-2">
             <GameShareDialog gameId={gameId} />
             <ThemeToggle />
+            <GameHistory history={history} />
             {isAdmin && <GameSettings settings={settings} onUpdate={onUpdate} />}
             <LeaveGameDialog
               onLeave={onLeave}

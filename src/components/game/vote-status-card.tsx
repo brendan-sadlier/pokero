@@ -3,10 +3,11 @@
  * Displays cards that indicate whether players have voted and their votes when revealed.
  */
 
-import { CircleCheck, Crown, Eye } from 'lucide-react';
+import { CircleCheck, Eye } from 'lucide-react';
 import { memo } from 'react';
 import { cn } from '../../lib/utils';
 import PlayerActionsMenu from './player-actions-menu';
+import { IconCrown } from '@tabler/icons-react';
 
 export interface PlayerVoteStatus {
   // Unique player identifier
@@ -90,6 +91,7 @@ const VoteStatusCard = memo(function VoteStatusCard({
 
   return (
     <div className="group/player flex flex-col items-center relative">
+      {/* Vote card */}
       <div
         className={cn(
           'flex items-center justify-center w-20 h-32 rounded-xl shadow-md text-xl font-bold transition-all',
@@ -103,16 +105,24 @@ const VoteStatusCard = memo(function VoteStatusCard({
       >
         {renderCardContent()}
       </div>
-      <div className="mt-2 flex items-center gap-0.5">
-        {isAdmin && <Crown className="size-3.5 text-primary shrink-0" aria-label="Admin" />}
-        <span className="text-md font-bold">{name}</span>
+
+      {/* Player name + admin badge */}
+      <div className="flex flex-col items-center justify-center gap-1 max-w-24 mt-2">
+        <div className="flex items-center gap-1">
+          {isAdmin && <IconCrown className="size-4 text-primary shrink-0" aria-label="Admin" />}
+          <span className="text-md font-bold truncate" title={name}>
+            {name}
+          </span>
+        </div>
         {showActions && onKickPlayer && onTransferAdmin && (
-          <PlayerActionsMenu
-            playerId={player.id}
-            playerName={player.name}
-            onKick={onKickPlayer}
-            onTransferAdmin={onTransferAdmin}
-          />
+          <div className="h-8 flex items-center justify-center">
+            <PlayerActionsMenu
+              playerId={player.id}
+              playerName={player.name}
+              onKick={onKickPlayer}
+              onTransferAdmin={onTransferAdmin}
+            />
+          </div>
         )}
       </div>
     </div>
